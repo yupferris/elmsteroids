@@ -4,30 +4,29 @@ import Svg.Attributes exposing (..)
 
 main =
   App.program
-     { init = init
-     , update = update
-     , subscriptions = subscriptions
-     , view = view
-     }
+    { init = init
+    , update = update
+    , subscriptions = \_ -> Sub.none
+    , view = view
+    }
 
 type alias Position =
   { x : Float
   , y : Float
   }
 
-type alias Player = Position
+type alias Player =
+  { position: Position
+  }
 
 type alias Model =
   { player : Player
   }
 
-init = (Model (Position 0 0), Cmd.none)
+init = (Model (Player (Position 0 0)), Cmd.none)
 
 update msg model =
   (model, Cmd.none)
-
-subscriptions model =
-  Sub.none
 
 view model =
   svg [ viewBox "0 0 100 100" ]
