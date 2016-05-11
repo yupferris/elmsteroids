@@ -1,8 +1,8 @@
 {
-    "version": "1.0.0",
-    "summary": "helpful summary of your project, less than 80 characters",
-    "repository": "https://github.com/user/project.git",
-    "license": "BSD3",
+    "version": "0.1.0",
+    "summary": "An Asteroids clone written in Elm.",
+    "repository": "https://github.com/yupferris/asterelm.git",
+    "license": "BSD2",
     "source-directories": [
         "."
     ],
