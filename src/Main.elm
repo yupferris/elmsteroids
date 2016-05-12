@@ -19,10 +19,24 @@ type alias Model =
   }
 
 type alias Player =
-  { position : Position
+  { position : Point
+  , angle : Float
   }
 
-type alias Position = (Float, Float)
+type alias Point = (Float, Float)
+
+add x y =
+  let
+    (xx, xy) = x
+    (yx, yy) = y
+  in (xx + yx, xy + yy)
+
+rotate angle point =
+  let
+    (x, y) = point
+    c = cos angle
+    s = sin angle
+  in (x * c + y * s, y * c - x * s)
 
 type alias KeyStates =
   { left : Bool
@@ -34,6 +48,7 @@ type alias KeyStates =
 init =
   ({ player =
      { position = (0, 0)
+     , angle = 0
      }
    , keys =
      { left = False
@@ -71,17 +86,16 @@ update msg model =
 
 updatePlayer player keys =
   let
-    (x, y) = player.position
-    leftDelta = if keys.left == True then -1 else 0
-    rightDelta = if keys.right == True then 1 else 0
-    xDelta = leftDelta + rightDelta
-    upDelta = if keys.up == True then 1 else 0
-    downDelta = if keys.down == True then -1 else 0
-    yDelta = upDelta + downDelta
-    x' = x + xDelta
-    y' = y + yDelta
+    delta = 0.03
+    leftDelta = if keys.left == True then -delta else 0
+    rightDelta = if keys.right == True then delta else 0
+    angleDelta = leftDelta + rightDelta
+    -- upDelta = if keys.up == True then 1 else 0
+    -- downDelta = if keys.down == True then -1 else 0
+    -- yDelta = upDelta + downDelta
+    angle = player.angle + angleDelta
   in
-    { position = (x', y') }
+    { player | angle = angle }
 
 subscriptions _ =
   let
@@ -94,30 +108,21 @@ subscriptions _ =
   in
     Sub.batch
       [ times (\_ -> Tick)
+
       , downs (\key ->
                  -- For some reason case didn't work here
                  -- The compiler thought `left` and `right` were the same patterns (?)
-                 if key == left then
-                   LeftPressed
-                 else if key == right then
-                   RightPressed
-                 else if key == up then
-                   UpPressed
-                 else if key == down then
-                   DownPressed
-                 else
-                   None)
+                 if key == left then LeftPressed
+                 else if key == right then RightPressed
+                 else if key == up then UpPressed
+                 else if key == down then DownPressed
+                 else None)
       , ups (\key ->
-               if key == left then
-                 LeftReleased
-               else if key == right then
-                 RightReleased
-               else if key == up then
-                 UpReleased
-               else if key == down then
-                 DownReleased
-               else
-                 None)
+               if key == left then LeftReleased
+               else if key == right then RightReleased
+               else if key == up then UpReleased
+               else if key == down then DownReleased
+               else None)
       ]
 
 view model =
@@ -129,6 +134,17 @@ view model =
     collage
       width height
       [ rect width height |> filled Color.black
-      , circle 5 |> filled Color.white |> move model.player.position
+      , drawPlayer model.player
       ]
     |> Element.toHtml
+
+drawPlayer player =
+  -- circle 5 |> filled Color.white |> move player.position
+  let
+    rotate' = rotate player.angle
+    front = add player.position (rotate' (0, 12))
+    left = add player.position (rotate' (-6, -6))
+    right = add player.position (rotate' (6, -6))
+  in
+    path [front, left, right, front]
+    |> traced { defaultLine | color = Color.white }
