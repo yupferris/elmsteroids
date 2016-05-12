@@ -176,11 +176,16 @@ drawPlayer player =
     direction = player.direction
   in
     group
+      -- TODO: Gonna probably need to generalize this wrapping logic
       [ drawShip position direction
       , drawShip (add position (-width, 0)) direction
       , drawShip (add position (width, 0)) direction
       , drawShip (add position (0, -height)) direction
       , drawShip (add position (0, height)) direction
+      , drawShip (add position (-width, -height)) direction
+      , drawShip (add position (width, -height)) direction
+      , drawShip (add position (-width, height)) direction
+      , drawShip (add position (width, height)) direction
       ]
 
 drawShip position direction =
