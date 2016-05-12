@@ -1,9 +1,10 @@
-import Html.App as App
-import Svg exposing (..)
-import Svg.Attributes exposing (..)
+import Html.App
+import Color exposing (Color)
+import Collage exposing (..)
+import Element exposing (..)
 
 main =
-  App.program
+  Html.App.program
     { init = init
     , update = update
     , subscriptions = \_ -> Sub.none
@@ -25,11 +26,13 @@ type alias Model =
 
 init = (Model (Player (Position 0 0)), Cmd.none)
 
-update msg model =
+update _ model =
   (model, Cmd.none)
 
-view model =
-  svg [ viewBox "0 0 100 100" ]
-    [ rect [ fill "#000", x "0", y "0", width "100", height "100" ] []
-    , polyline [ fill "none", stroke "#fff", points "20,20 80,20 50,80 20,20" ] []
+view _ =
+  collage
+    100 100
+    [ rect 100 100 |> filled Color.black
+    , circle 5 |> filled Color.white
     ]
+    |> Element.toHtml

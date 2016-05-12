@@ -4,13 +4,13 @@
     "repository": "https://github.com/yupferris/asterelm.git",
     "license": "BSD2",
     "source-directories": [
-        "."
+        "src"
     ],
     "exposed-modules": [],
     "dependencies": {
         "elm-lang/core": "4.0.0 <= v < 5.0.0",
         "elm-lang/html": "1.0.0 <= v < 2.0.0",
-        "elm-lang/svg": "1.0.0 <= v < 2.0.0"
+        "evancz/elm-graphics": "1.0.0 <= v < 2.0.0"
     },
     "elm-version": "0.17.0 <= v < 0.18.0"
 }
