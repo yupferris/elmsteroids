@@ -48,16 +48,11 @@ wrap bounds vector =
     bottom = -h / 2
     (x, y) = vector
   in
-    if x < left then
-      wrap bounds (x + w, y)
-    else if x > right then
-      wrap bounds (x - w, y)
-    else if y < bottom then
-      wrap bounds (x, y + h)
-    else if y > top then
-      wrap bounds (x, y - h)
-    else
-      vector
+    if x < left then wrap bounds (x + w, y)
+    else if x > right then wrap bounds (x - w, y)
+    else if y < bottom then wrap bounds (x, y + h)
+    else if y > top then wrap bounds (x, y - h)
+    else vector
 
 type alias KeyStates =
   { left : Bool
