@@ -1,3 +1,4 @@
+import List exposing (..)
 import Html.App
 import Time exposing (..)
 import AnimationFrame exposing (..)
@@ -16,13 +17,24 @@ main =
 
 type alias Model =
   { player : Player
+  , bullets : List Bullet
   , keys : KeyStates
   }
 
 type alias Player =
   { position : Vector
-  , velocity: Vector
+  , velocity : Vector
   , direction : Float
+  }
+
+shipFront position direction = add position (rotate direction (0, 12))
+shipLeft position direction = add position (rotate direction (-6, -6))
+shipRight position direction = add position (rotate direction (6, -6))
+
+type alias Bullet =
+  { position : Vector
+  , velocity : Vector
+  , timeUntilDeath : Float
   }
 
 type alias Vector = (Float, Float)
@@ -32,6 +44,11 @@ add x y =
     (xx, xy) = x
     (yx, yy) = y
   in (xx + yx, xy + yy)
+
+mul scalar vector =
+  let
+    (x, y) = vector
+  in (x * scalar, y * scalar)
 
 rotate angle vector =
   let
@@ -60,6 +77,7 @@ type alias KeyStates =
   , right : Bool
   , up : Bool
   , down : Bool
+  , spaceTapped : Bool
   }
 
 init =
@@ -68,11 +86,13 @@ init =
      , velocity = (0, 0)
      , direction = 0
      }
+   , bullets = []
    , keys =
      { left = False
      , right = False
      , up = False
      , down = False
+     , spaceTapped = False
      }
    }, Cmd.none)
 
@@ -83,52 +103,77 @@ type Msg
   | RightPressed | RightReleased
   | UpPressed | UpReleased
   | DownPressed | DownReleased
+  | SpacePressed
 
 width = 500
 height = 500
 bounds = (width, height)
 
 update msg model =
-  let model' =
-    case msg of
-      None -> model
+  let
+    keys = model.keys
 
-      Tick timeDelta -> { model | player = updatePlayer timeDelta model.player model.keys }
+    model' =
+      case msg of
+        None -> model
 
-      -- { model.keys | ... } didn't work here; compiler didn't understand the left value could be the result of a function application
-      LeftPressed -> { model | keys = let keys = model.keys in { keys | left = True } }
-      LeftReleased -> { model | keys = let keys = model.keys in { keys | left = False } }
-      RightPressed -> { model | keys = let keys = model.keys in { keys | right = True } }
-      RightReleased -> { model | keys = let keys = model.keys in { keys | right = False } }
-      UpPressed -> { model | keys = let keys = model.keys in { keys | up = True } }
-      UpReleased -> { model | keys = let keys = model.keys in { keys | up = False } }
-      DownPressed -> { model | keys = let keys = model.keys in { keys | down = True } }
-      DownReleased -> { model | keys = let keys = model.keys in { keys | down = False } }
+        Tick timeDelta ->
+          { model
+            | player = updatePlayer timeDelta keys model.player
+            , bullets = updateBullets timeDelta keys model.player model.bullets
+            , keys = { keys | spaceTapped = False }
+          }
+
+        -- { model.keys | ... } didn't work here; compiler didn't understand the left value could be the result of a function application
+        LeftPressed -> { model | keys = { keys | left = True } }
+        LeftReleased -> { model | keys = { keys | left = False } }
+        RightPressed -> { model | keys = { keys | right = True } }
+        RightReleased -> { model | keys = { keys | right = False } }
+        UpPressed -> { model | keys = { keys | up = True } }
+        UpReleased -> { model | keys = { keys | up = False } }
+        DownPressed -> { model | keys = { keys | down = True } }
+        DownReleased -> { model | keys = { keys | down = False } }
+        SpacePressed -> { model | keys = { keys | spaceTapped = True } }
   in (model', Cmd.none)
 
-updatePlayer timeDelta player keys =
+updatePlayer timeDelta keys player =
   let
     position =
-      add player.position player.velocity
+      add player.position (mul timeDelta player.velocity)
       |> wrap bounds
 
-    accel = 0.5 * timeDelta
-    upAccel = if keys.up == True then accel else 0
-    downAccel = if keys.down == True then -accel else 0
+    accel = 57.0
+    upAccel = if keys.up then accel else 0
+    downAccel = if keys.down then -accel else 0
     velocityDelta = upAccel + downAccel
-    velocity = add player.velocity (rotate player.direction (0, velocityDelta))
+    velocity = add player.velocity (mul timeDelta (rotate player.direction (0, velocityDelta)))
 
-    rotationSpeed = 1.5 * timeDelta
-    leftDelta = if keys.left == True then -rotationSpeed else 0
-    rightDelta = if keys.right == True then rotationSpeed else 0
+    rotationSpeed = 1.5
+    leftDelta = if keys.left then -rotationSpeed else 0
+    rightDelta = if keys.right then rotationSpeed else 0
     directionDelta = leftDelta + rightDelta
-    direction = player.direction + directionDelta
+    direction = player.direction + directionDelta * timeDelta
   in
     { player
-      | position = add position velocity
+      | position = position
       , velocity = velocity
       , direction = direction
     }
+
+updateBullets timeDelta keys player =
+  fireBullet keys player >> moveBullets timeDelta -- >> killBullets timeDelta
+
+fireBullet keys player bullets =
+  if keys.spaceTapped then
+    { position = shipFront player.position player.direction
+    , velocity = player.velocity |> add (rotate player.direction (0, 60))
+    , timeUntilDeath = 5.0
+    } :: bullets
+  else
+    bullets
+
+moveBullets timeDelta =
+  map (\bullet -> { bullet | position = add bullet.position (mul timeDelta bullet.velocity) |> wrap bounds })
 
 subscriptions _ =
   let
@@ -149,6 +194,7 @@ subscriptions _ =
                  else if key == right then RightPressed
                  else if key == up then UpPressed
                  else if key == down then DownPressed
+                 else if key == space then SpacePressed
                  else None)
       , ups (\key ->
                if key == left then LeftReleased
@@ -163,6 +209,7 @@ view model =
     width height
     [ rect width height |> filled Color.black
     , drawPlayer model.player
+    , drawBullets model.bullets
     ]
   |> Element.toHtml
 
@@ -187,9 +234,14 @@ drawPlayer player =
 drawShip position direction =
   let
     rotate' = rotate direction
-    front = add position (rotate' (0, 12))
-    left = add position (rotate' (-6, -6))
-    right = add position (rotate' (6, -6))
+    front = shipFront position direction
+    left = shipLeft position direction
+    right = shipRight position direction
   in
     path [front, left, right, front]
     |> traced { defaultLine | color = Color.white }
+
+drawBullets bullets =
+  bullets
+  |> map (\bullet -> rect 2 2 |> filled Color.white |> move bullet.position)
+  |> group
