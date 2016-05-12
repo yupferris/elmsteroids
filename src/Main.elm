@@ -39,6 +39,26 @@ rotate angle vector =
     s = sin angle
   in (x * c + y * s, y * c - x * s)
 
+wrap bounds vector =
+  let
+    (w, h) = bounds
+    left = -w / 2
+    right = w / 2
+    top = h / 2
+    bottom = -h / 2
+    (x, y) = vector
+  in
+    if x < left then
+      wrap bounds (x + w, y)
+    else if x > right then
+      wrap bounds (x - w, y)
+    else if y < bottom then
+      wrap bounds (x, y + h)
+    else if y > top then
+      wrap bounds (x, y - h)
+    else
+      vector
+
 type alias KeyStates =
   { left : Bool
   , right : Bool
@@ -68,6 +88,10 @@ type Msg
   | UpPressed | UpReleased
   | DownPressed | DownReleased
 
+width = 500
+height = 500
+bounds = (width, height)
+
 update msg model =
   let model' =
     case msg of
@@ -88,7 +112,9 @@ update msg model =
 
 updatePlayer player keys =
   let
-    position = add player.position player.velocity
+    position =
+      add player.position player.velocity
+      |> wrap bounds
 
     accel = 0.01
     upAccel = if keys.up == True then accel else 0
@@ -137,24 +163,32 @@ subscriptions _ =
       ]
 
 view model =
-  let
-    width = 500
-    height = 500
-
-  in
-    collage
-      width height
-      [ rect width height |> filled Color.black
-      , drawPlayer model.player
-      ]
-    |> Element.toHtml
+  collage
+    width height
+    [ rect width height |> filled Color.black
+    , drawPlayer model.player
+    ]
+  |> Element.toHtml
 
 drawPlayer player =
   let
-    rotate' = rotate player.direction
-    front = add player.position (rotate' (0, 12))
-    left = add player.position (rotate' (-6, -6))
-    right = add player.position (rotate' (6, -6))
+    position = player.position
+    direction = player.direction
+  in
+    group
+      [ drawShip position direction
+      , drawShip (add position (-width, 0)) direction
+      , drawShip (add position (width, 0)) direction
+      , drawShip (add position (0, -height)) direction
+      , drawShip (add position (0, height)) direction
+      ]
+
+drawShip position direction =
+  let
+    rotate' = rotate direction
+    front = add position (rotate' (0, 12))
+    left = add position (rotate' (-6, -6))
+    right = add position (rotate' (6, -6))
   in
     path [front, left, right, front]
     |> traced { defaultLine | color = Color.white }
