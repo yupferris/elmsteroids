@@ -1,4 +1,5 @@
 import Html.App
+import Time exposing (..)
 import AnimationFrame exposing (..)
 import Keyboard exposing (..)
 import Color exposing (..)
@@ -77,7 +78,7 @@ init =
 
 type Msg
   = None
-  | Tick
+  | Tick Time
   | LeftPressed | LeftReleased
   | RightPressed | RightReleased
   | UpPressed | UpReleased
@@ -92,7 +93,7 @@ update msg model =
     case msg of
       None -> model
 
-      Tick -> { model | player = updatePlayer model.player model.keys }
+      Tick timeDelta -> { model | player = updatePlayer timeDelta model.player model.keys }
 
       -- { model.keys | ... } didn't work here; compiler didn't understand the left value could be the result of a function application
       LeftPressed -> { model | keys = let keys = model.keys in { keys | left = True } }
@@ -105,19 +106,19 @@ update msg model =
       DownReleased -> { model | keys = let keys = model.keys in { keys | down = False } }
   in (model', Cmd.none)
 
-updatePlayer player keys =
+updatePlayer timeDelta player keys =
   let
     position =
       add player.position player.velocity
       |> wrap bounds
 
-    accel = 0.01
+    accel = 0.5 * timeDelta
     upAccel = if keys.up == True then accel else 0
     downAccel = if keys.down == True then -accel else 0
     velocityDelta = upAccel + downAccel
     velocity = add player.velocity (rotate player.direction (0, velocityDelta))
 
-    rotationSpeed = 0.03
+    rotationSpeed = 1.5 * timeDelta
     leftDelta = if keys.left == True then -rotationSpeed else 0
     rightDelta = if keys.right == True then rotationSpeed else 0
     directionDelta = leftDelta + rightDelta
@@ -139,7 +140,7 @@ subscriptions _ =
 
   in
     Sub.batch
-      [ times (\_ -> Tick) -- TODO: Proper delta timing
+      [ diffs (inSeconds >> Tick)
 
       , downs (\key ->
                  -- For some reason case didn't work here
