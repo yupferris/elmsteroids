@@ -19,11 +19,12 @@ type alias Model =
   }
 
 type alias Player =
-  { position : Point
-  , angle : Float
+  { position : Vector
+  , velocity: Vector
+  , direction : Float
   }
 
-type alias Point = (Float, Float)
+type alias Vector = (Float, Float)
 
 add x y =
   let
@@ -31,9 +32,9 @@ add x y =
     (yx, yy) = y
   in (xx + yx, xy + yy)
 
-rotate angle point =
+rotate angle vector =
   let
-    (x, y) = point
+    (x, y) = vector
     c = cos angle
     s = sin angle
   in (x * c + y * s, y * c - x * s)
@@ -48,7 +49,8 @@ type alias KeyStates =
 init =
   ({ player =
      { position = (0, 0)
-     , angle = 0
+     , velocity = (0, 0)
+     , direction = 0
      }
    , keys =
      { left = False
@@ -86,16 +88,25 @@ update msg model =
 
 updatePlayer player keys =
   let
-    delta = 0.03
-    leftDelta = if keys.left == True then -delta else 0
-    rightDelta = if keys.right == True then delta else 0
-    angleDelta = leftDelta + rightDelta
-    -- upDelta = if keys.up == True then 1 else 0
-    -- downDelta = if keys.down == True then -1 else 0
-    -- yDelta = upDelta + downDelta
-    angle = player.angle + angleDelta
+    position = add player.position player.velocity
+
+    accel = 0.01
+    upAccel = if keys.up == True then accel else 0
+    downAccel = if keys.down == True then -accel else 0
+    velocityDelta = upAccel + downAccel
+    velocity = add player.velocity (rotate player.direction (0, velocityDelta))
+
+    rotationSpeed = 0.03
+    leftDelta = if keys.left == True then -rotationSpeed else 0
+    rightDelta = if keys.right == True then rotationSpeed else 0
+    directionDelta = leftDelta + rightDelta
+    direction = player.direction + directionDelta
   in
-    { player | angle = angle }
+    { player
+      | position = add position velocity
+      , velocity = velocity
+      , direction = direction
+    }
 
 subscriptions _ =
   let
@@ -107,7 +118,7 @@ subscriptions _ =
 
   in
     Sub.batch
-      [ times (\_ -> Tick)
+      [ times (\_ -> Tick) -- TODO: Proper delta timing
 
       , downs (\key ->
                  -- For some reason case didn't work here
@@ -139,9 +150,8 @@ view model =
     |> Element.toHtml
 
 drawPlayer player =
-  -- circle 5 |> filled Color.white |> move player.position
   let
-    rotate' = rotate player.angle
+    rotate' = rotate player.direction
     front = add player.position (rotate' (0, 12))
     left = add player.position (rotate' (-6, -6))
     right = add player.position (rotate' (6, -6))
