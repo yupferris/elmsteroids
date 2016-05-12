@@ -248,5 +248,5 @@ drawShip position direction =
 
 drawBullets bullets =
   bullets
-  |> map (\bullet -> rect 2 2 |> filled Color.white |> move bullet.position)
+  |> map (\bullet -> rect 2 2 |> filled Color.white |> move bullet.position |> alpha (min bullet.timeUntilDeath 1))
   |> group
