@@ -98,7 +98,7 @@ init =
 
 type Msg
   = None
-  | Tick Time
+  | Tick Float -- Time value is always in seconds
   | LeftPressed | LeftReleased
   | RightPressed | RightReleased
   | UpPressed | UpReleased
@@ -240,7 +240,6 @@ drawPlayer player =
 
 drawShip position direction =
   let
-    rotate' = rotate direction
     front = shipFront position direction
     left = shipLeft position direction
     right = shipRight position direction
