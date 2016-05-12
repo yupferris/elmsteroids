@@ -161,7 +161,7 @@ updatePlayer timeDelta keys player =
     }
 
 updateBullets timeDelta keys player =
-  fireBullet keys player >> moveBullets timeDelta -- >> killBullets timeDelta
+  fireBullet keys player >> filterMap (moveBullet timeDelta >> killBullet timeDelta)
 
 fireBullet keys player bullets =
   if keys.spaceTapped then
@@ -172,8 +172,15 @@ fireBullet keys player bullets =
   else
     bullets
 
-moveBullets timeDelta =
-  map (\bullet -> { bullet | position = add bullet.position (mul timeDelta bullet.velocity) |> wrap bounds })
+moveBullet timeDelta bullet =
+  { bullet | position = add bullet.position (mul timeDelta bullet.velocity) |> wrap bounds }
+
+killBullet timeDelta bullet =
+  let
+    timeUntilDeath = bullet.timeUntilDeath - timeDelta
+  in
+    if timeUntilDeath > 0 then Just { bullet | timeUntilDeath = timeUntilDeath }
+    else Nothing
 
 subscriptions _ =
   let
