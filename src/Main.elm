@@ -124,7 +124,6 @@ update msg model =
             , keys = { keys | spaceTapped = False }
           }
 
-        -- { model.keys | ... } didn't work here; compiler didn't understand the left value could be the result of a function application
         LeftPressed -> { model | keys = { keys | left = True } }
         LeftReleased -> { model | keys = { keys | left = False } }
         RightPressed -> { model | keys = { keys | right = True } }
