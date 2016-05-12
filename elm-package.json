@@ -1,7 +1,7 @@
 {
     "version": "0.1.0",
     "summary": "An Asteroids clone written in Elm.",
-    "repository": "https://github.com/yupferris/asterelm.git",
+    "repository": "https://github.com/yupferris/elmsteroids.git",
     "license": "BSD2",
     "source-directories": [
         "src"

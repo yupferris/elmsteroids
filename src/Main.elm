@@ -22,12 +22,7 @@ type alias Player =
   { position : Position
   }
 
-type alias Position =
-  { x : Float
-  , y : Float
-  }
-
-toPair position = (position.x, position.y)
+type alias Position = (Float, Float)
 
 type alias KeyStates =
   { left : Bool
@@ -38,10 +33,7 @@ type alias KeyStates =
 
 init =
   ({ player =
-     { position =
-       { x = 0
-       , y = 0
-       }
+     { position = (0, 0)
      }
    , keys =
      { left = False
@@ -64,16 +56,7 @@ update msg model =
     case msg of
       None -> model
 
-      Tick ->
-        let
-          x = model.player.position.x
-          y = model.player.position.y
-          xDelta = if model.keys.left == True then -1 else if model.keys.right == True then 1 else 0
-          yDelta = if model.keys.down == True then -1 else if model.keys.up == True then 1 else 0
-          x' = x + xDelta
-          y' = y + yDelta
-        in
-          { model | player = { position = { x = x', y = y' } } }
+      Tick -> { model | player = updatePlayer model.player model.keys }
 
       -- { model.keys | ... } didn't work here; compiler didn't understand the left value could be the result of a function application
       LeftPressed -> { model | keys = let keys = model.keys in { keys | left = True } }
@@ -85,6 +68,20 @@ update msg model =
       DownPressed -> { model | keys = let keys = model.keys in { keys | down = True } }
       DownReleased -> { model | keys = let keys = model.keys in { keys | down = False } }
   in (model', Cmd.none)
+
+updatePlayer player keys =
+  let
+    (x, y) = player.position
+    leftDelta = if keys.left == True then -1 else 0
+    rightDelta = if keys.right == True then 1 else 0
+    xDelta = leftDelta + rightDelta
+    upDelta = if keys.up == True then 1 else 0
+    downDelta = if keys.down == True then -1 else 0
+    yDelta = upDelta + downDelta
+    x' = x + xDelta
+    y' = y + yDelta
+  in
+    { position = (x', y') }
 
 subscriptions _ =
   let
@@ -132,6 +129,6 @@ view model =
     collage
       width height
       [ rect width height |> filled Color.black
-      , circle 5 |> filled Color.white |> move (toPair model.player.position)
+      , circle 5 |> filled Color.white |> move model.player.position
       ]
     |> Element.toHtml
