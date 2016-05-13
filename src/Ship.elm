@@ -1,4 +1,4 @@
-module Ship exposing (front, left, right, draw)
+module Ship exposing (front, draw)
 
 import Collage exposing (group, path, traced, defaultLine)
 import Color exposing (..)
