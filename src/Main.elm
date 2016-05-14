@@ -31,8 +31,7 @@ type alias Model =
 init =
   let
     -- TODO: Different seed each time
-    randomSeed = initialSeed 12345
-    (asteroids, randomSeed') = Asteroids.init randomSeed
+    (asteroids, randomSeed) = initialSeed 12345 |> Asteroids.init
 
   in
     ({ player =
@@ -49,7 +48,7 @@ init =
          , down = False
          , spaceTapped = False
          }
-     , randomSeed = randomSeed'
+     , randomSeed = randomSeed
      }, Cmd.none)
 
 type Msg
