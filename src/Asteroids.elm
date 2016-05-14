@@ -3,7 +3,7 @@ module Asteroids exposing (Asteroid, init, tick, draw)
 import List exposing (..)
 import Collage exposing (group, rect, filled, move)
 import Color exposing (..)
-import Random exposing (float, step)
+import Random exposing (int, float, step)
 import Vector exposing (..)
 import Bounds exposing (..)
 
@@ -14,8 +14,8 @@ type alias Asteroid =
   }
 
 init seed =
-  let count = 3 -- TODO: Randomize
-  in init' count [] seed
+  let (count, seed') = step (int 1 5) seed
+  in init' count [] seed'
 
 init' count acc seed =
   if length acc == count then (acc, seed)
