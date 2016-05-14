@@ -4,6 +4,7 @@ import List exposing (..)
 import Collage exposing (group, rect, filled, move)
 import Color exposing (..)
 import Random exposing (Seed, int, float, step)
+import RandomProcessor exposing (..)
 import Vector exposing (..)
 import Bounds exposing (..)
 
@@ -12,17 +13,6 @@ type alias Asteroid =
   , velocity : Vector
   , rotation : Float
   }
-
-type alias RandomProcessor a = Seed -> (a, Seed)
-
-return : a -> RandomProcessor a
-return x = \seed -> (x, seed)
-
-(>>=) : RandomProcessor a -> (a -> RandomProcessor b) -> RandomProcessor b
-(>>=) rp f =
-  \seed ->
-    let (x, seed') = rp seed
-    in f x seed'
 
 init =
   step (int 1 5) >>= \count ->
