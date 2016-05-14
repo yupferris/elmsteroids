@@ -27,13 +27,15 @@ initAsteroid seed =
   let
     (x, seed') = step (float left right) seed
     (y, seed'') = step (float bottom top) seed'
-    (velDirection, seed''') = step (float 0 (pi * 2)) seed''
+    angleGen = float 0 (pi * 2)
+    (velDirection, seed''') = step angleGen seed''
     (velMagnitude, seed'''') = step (float 0 10) seed'''
+    (rotation, seed''''') = step angleGen seed''''
   in
     ({ position = (x, y)
      , velocity = mul velMagnitude (cos velDirection, sin velDirection)
-     , rotation = 0 -- TODO
-     }, seed'''')
+     , rotation = rotation
+     }, seed''''')
 
 tick timeDelta = map (moveAsteroid timeDelta)
 
@@ -47,4 +49,5 @@ draw = map drawAsteroid >> group
 drawAsteroid asteroid =
   rect 10 10
   |> filled red
+  |> Collage.rotate asteroid.rotation
   |> move asteroid.position
