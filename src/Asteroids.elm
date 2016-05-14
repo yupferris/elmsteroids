@@ -1,7 +1,7 @@
 module Asteroids exposing (Asteroid, init, tick, draw)
 
 import List exposing (..)
-import Collage exposing (Form, group, path, filled, traced, move, defaultLine)
+import Collage exposing (Form, group, polygon, filled, outlined, move, defaultLine)
 import Color exposing (..)
 import Random exposing (Seed, int, float, step)
 import RandomProcessor exposing (..)
@@ -89,12 +89,13 @@ draw = map drawAsteroid >> group
 
 drawAsteroid : Asteroid -> Form
 drawAsteroid asteroid =
-  case asteroid.points of
-    x::_ ->
-      asteroid.points ++ [x]
-      |> path
-      --|> filled black -- TODO: Is this possible?
-      |> traced { defaultLine | color = white }
-      |> Collage.rotate asteroid.rotation
-      |> move asteroid.position
-    _ -> group []
+  let shape =
+        asteroid.points
+        |> polygon
+  in
+    group
+      [ shape |> filled black
+      , shape |> outlined { defaultLine | color = white }
+      ]
+    |> Collage.rotate asteroid.rotation
+    |> move asteroid.position

@@ -1,6 +1,6 @@
 module Ship exposing (front, draw)
 
-import Collage exposing (Form, group, path, traced, defaultLine)
+import Collage exposing (Form, group, polygon, outlined, defaultLine)
 import Color exposing (..)
 import Vector exposing (..)
 
@@ -20,5 +20,5 @@ draw position direction =
     left' = left position direction
     right' = right position direction
   in
-    path [front', left', right', front']
-    |> traced { defaultLine | color = white }
+    polygon [front', left', right']
+    |> outlined { defaultLine | color = white }
