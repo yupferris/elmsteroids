@@ -3,7 +3,7 @@ module Asteroids exposing (Asteroid, init, tick, draw)
 import List exposing (..)
 import Collage exposing (group, rect, filled, move)
 import Color exposing (..)
-import Random exposing (int, float, step)
+import Random exposing (Seed, int, float, step)
 import Vector exposing (..)
 import Bounds exposing (..)
 
@@ -13,29 +13,40 @@ type alias Asteroid =
   , rotation : Float
   }
 
-init seed =
-  let (count, seed') = step (int 1 5) seed
-  in init' count [] seed'
+type alias RandomProcessor a = Seed -> (a, Seed)
 
-init' count acc seed =
-  if length acc == count then (acc, seed)
+return : a -> RandomProcessor a
+return x = \seed -> (x, seed)
+
+(>>=) : RandomProcessor a -> (a -> RandomProcessor b) -> RandomProcessor b
+(>>=) rp f =
+  \seed ->
+    let (x, seed') = rp seed
+    in f x seed'
+
+init =
+  step (int 1 5) >>= \count ->
+    init' count []
+
+init' count acc =
+  if length acc == count then return acc
   else
-    let (asteroid, seed') = initAsteroid seed
-    in init' count (asteroid :: acc) seed'
+    initAsteroid >>= \asteroid ->
+      init' count (asteroid :: acc)
 
-initAsteroid seed =
-  let
-    (x, seed') = step (float left right) seed
-    (y, seed'') = step (float bottom top) seed'
-    angleGen = float 0 (pi * 2)
-    (velDirection, seed''') = step angleGen seed''
-    (velMagnitude, seed'''') = step (float 0 10) seed'''
-    (rotation, seed''''') = step angleGen seed''''
+initAsteroid =
+  let angleGen = float 0 (pi * 2)
   in
-    ({ position = (x, y)
-     , velocity = mul velMagnitude (cos velDirection, sin velDirection)
-     , rotation = rotation
-     }, seed''''')
+    step (float left right) >>= \x ->
+      step (float bottom top) >>= \y ->
+        step angleGen >>= \velDirection ->
+          step (float 0 10) >>= \velMagnitude ->
+            step angleGen >>= \rotation ->
+              return
+                { position = (x, y)
+                , velocity = mul velMagnitude (cos velDirection, sin velDirection)
+                , rotation = rotation
+                }
 
 tick timeDelta = map (moveAsteroid timeDelta)
 
