@@ -19,10 +19,10 @@ tick timeDelta keys player =
 
 fireBullet keys player bullets =
   if keys.spaceTapped then
-    { position = Ship.front player.position player.direction
+    { position = Ship.front player.position player.rotation
     , velocity =
       player.velocity
-      |> add (rotate player.direction (0, 60))
+      |> add (rotate player.rotation (0, 60))
     , timeUntilDeath = 5.0
     } :: bullets
   else

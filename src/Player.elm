@@ -9,7 +9,7 @@ import Ship
 type alias Player =
   { position : Vector
   , velocity : Vector
-  , direction : Float
+  , rotation : Float
   }
 
 tick timeDelta keys player =
@@ -24,32 +24,32 @@ tick timeDelta keys player =
     velocityDelta = upAccel + downAccel
     velocity =
       (0, velocityDelta * timeDelta)
-      |> rotate player.direction
+      |> rotate player.rotation
       |> add player.velocity
 
     rotationSpeed = 1.5
     leftDelta = if keys.left then -rotationSpeed else 0
     rightDelta = if keys.right then rotationSpeed else 0
-    directionDelta = leftDelta + rightDelta
-    direction = player.direction + directionDelta * timeDelta
+    rotationDelta = leftDelta + rightDelta
+    rotation = player.rotation + rotationDelta * timeDelta
 
   in
     { player
       | position = position
       , velocity = velocity
-      , direction = direction
+      , rotation = rotation
     }
 
 draw player =
   let
     position = player.position
-    direction = player.direction
+    rotation = player.rotation
 
-    drawShip offset = Ship.draw (add position offset) direction
+    drawShip offset = Ship.draw (add position offset) rotation
   in
     group
       -- TODO: Gonna probably need to generalize this wrapping logic
-      [ Ship.draw position direction
+      [ Ship.draw position rotation
       , drawShip (-width, 0)
       , drawShip (width, 0)
       , drawShip (0, -height)
