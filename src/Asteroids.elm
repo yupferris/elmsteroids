@@ -1,7 +1,7 @@
 module Asteroids exposing (Asteroid, init, tick, draw)
 
 import List exposing (..)
-import Collage exposing (Form, group, rect, filled, move)
+import Collage exposing (Form, group, path, filled, traced, move, defaultLine)
 import Color exposing (..)
 import Random exposing (Seed, int, float, step)
 import RandomProcessor exposing (..)
@@ -13,11 +13,12 @@ type alias Asteroid =
   , velocity : Vector
   , rotation : Float
   , rotationVelocity : Float
+  , points : List Vector
   }
 
 init : Seed -> (List Asteroid, Seed)
 init =
-  step (int 1 5) >>= \count ->
+  step (int 3 8) >>= \count ->
     init' count
 
 init' : Int -> Seed -> (List Asteroid, Seed)
@@ -38,12 +39,36 @@ initAsteroid =
           step (float 0 10) >>= \velMagnitude ->
             angle >>= \rotation ->
               step (float -0.5 0.5) >>= \rotationVelocity ->
-                return
-                  { position = (x, y)
-                  , velocity = mul velMagnitude (cos velDirection, sin velDirection)
-                  , rotation = rotation
-                  , rotationVelocity = rotationVelocity
-                  }
+                initPoints >>= \points ->
+                  return
+                    { position = (x, y)
+                    , velocity = mul velMagnitude (cos velDirection, sin velDirection)
+                    , rotation = rotation
+                    , rotationVelocity = rotationVelocity
+                    , points = points
+                    }
+
+initPoints : Seed -> (List Vector, Seed)
+initPoints =
+  step (int 6 10) >>= \count ->
+    step (float 20.0 70.0) >>= \size ->
+      initPoints' count (pi * 2.0 / (toFloat count)) size
+
+initPoints' : Int -> Float -> Float -> Seed -> (List Vector, Seed)
+initPoints' count segAngleDelta size =
+  if count == 0 then return []
+  else
+    let angleOffset = toFloat count * segAngleDelta
+    in
+      step (float (-segAngleDelta * 0.3) (segAngleDelta * 0.3)) >>= \angle ->
+        let
+          angle' = angle + angleOffset
+          x = cos angle' * size
+          y = sin angle' * size
+          point = (x, y)
+        in
+          initPoints' (count - 1) segAngleDelta size >>= \acc ->
+            return (point :: acc)
 
 tick : Float -> List Asteroid -> List Asteroid
 tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)
@@ -64,7 +89,12 @@ draw = map drawAsteroid >> group
 
 drawAsteroid : Asteroid -> Form
 drawAsteroid asteroid =
-  rect 10 10
-  |> filled red
-  |> Collage.rotate asteroid.rotation
-  |> move asteroid.position
+  case asteroid.points of
+    x::_ ->
+      asteroid.points ++ [x]
+      |> path
+      --|> filled black -- TODO: Is this possible?
+      |> traced { defaultLine | color = white }
+      |> Collage.rotate asteroid.rotation
+      |> move asteroid.position
+    _ -> group []
