@@ -32,7 +32,7 @@ initAsteroid seed =
   in
     ({ position = (x, y)
      , velocity = mul velMagnitude (cos velDirection, sin velDirection)
-     , rotation = (0, 0) -- TODO
+     , rotation = 0 -- TODO
      }, seed'''')
 
 tick timeDelta = map (moveAsteroid timeDelta)
