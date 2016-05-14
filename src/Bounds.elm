@@ -3,10 +3,10 @@ module Bounds exposing (width, height, left, right, top, bottom, bounds)
 import Vector exposing (..)
 
 width : Float
-width = 500
+width = 854
 
 height : Float
-height = 500
+height = 480
 
 left : Float
 left = -width / 2
