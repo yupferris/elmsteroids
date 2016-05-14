@@ -3,6 +3,7 @@ module Asteroids exposing (Asteroid, init, tick, draw)
 import List exposing (..)
 import Collage exposing (Form, group, polygon, filled, outlined, move, defaultLine)
 import Color exposing (..)
+import DrawWrapped exposing (..)
 import Random exposing (Seed, int, float, step)
 import RandomProcessor exposing (..)
 import Vector exposing (..)
@@ -89,9 +90,10 @@ draw = map drawAsteroid >> group
 
 drawAsteroid : Asteroid -> Form
 drawAsteroid asteroid =
-  let shape =
-        asteroid.points
-        |> polygon
+  let
+    shape =
+      asteroid.points
+      |> polygon
   in
     group
       [ shape |> filled black
@@ -99,3 +101,4 @@ drawAsteroid asteroid =
       ]
     |> Collage.rotate asteroid.rotation
     |> move asteroid.position
+    |> drawWrapped

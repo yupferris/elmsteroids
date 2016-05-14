@@ -1,7 +1,8 @@
 module Player exposing (Player, tick, draw)
 
-import Collage exposing (Form, group)
+import Collage exposing (Form)
 import Color exposing (..)
+import DrawWrapped exposing (..)
 import Vector exposing (..)
 import Bounds exposing (..)
 import Ship
@@ -44,21 +45,5 @@ tick timeDelta keys player =
 
 draw : Player -> Form
 draw player =
-  let
-    position = player.position
-    rotation = player.rotation
-
-    drawShip offset = Ship.draw (add position offset) rotation
-  in
-    group
-      -- TODO: Gonna probably need to generalize this wrapping logic
-      [ Ship.draw position rotation
-      , drawShip (-width, 0)
-      , drawShip (width, 0)
-      , drawShip (0, -height)
-      , drawShip (0, height)
-      , drawShip (-width, -height)
-      , drawShip (width, -height)
-      , drawShip (-width, height)
-      , drawShip (width, height)
-      ]
+  Ship.draw player.position player.rotation
+  |> drawWrapped
