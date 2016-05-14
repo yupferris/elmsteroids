@@ -17,22 +17,23 @@ type alias Asteroid =
 
 init =
   step (int 1 5) >>= \count ->
-    init' count []
+    init' count
 
-init' count acc =
-  if length acc == count then return acc
+init' count =
+  if count == 0 then return []
   else
     initAsteroid >>= \asteroid ->
-      init' count (asteroid :: acc)
+      init' (count - 1) >>= \acc ->
+        return (asteroid :: acc)
 
 initAsteroid =
-  let angleGen = float 0 (pi * 2)
+  let angle = float 0 (pi * 2) |> step
   in
     step (float left right) >>= \x ->
       step (float bottom top) >>= \y ->
-        step angleGen >>= \velDirection ->
+        angle >>= \velDirection ->
           step (float 0 10) >>= \velMagnitude ->
-            step angleGen >>= \rotation ->
+            angle >>= \rotation ->
               step (float -0.5 0.5) >>= \rotationVelocity ->
                 return
                   { position = (x, y)
@@ -41,14 +42,16 @@ initAsteroid =
                   , rotationVelocity = rotationVelocity
                   }
 
-tick timeDelta = map (moveAsteroid timeDelta)
+tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)
 
 moveAsteroid timeDelta asteroid =
-  { asteroid
-    | position =
+  { asteroid | position =
       add asteroid.position (mul timeDelta asteroid.velocity)
-      |> wrap bounds
-    , rotation = asteroid.rotation + asteroid.rotationVelocity * timeDelta }
+      |> wrap bounds }
+
+rotateAsteroid timeDelta asteroid =
+  { asteroid | rotation =
+      asteroid.rotation + asteroid.rotationVelocity * timeDelta }
 
 draw = map drawAsteroid >> group
 
