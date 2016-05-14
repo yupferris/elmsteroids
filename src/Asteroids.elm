@@ -27,14 +27,20 @@ initAsteroid seed =
   let
     (x, seed') = step (float left right) seed
     (y, seed'') = step (float bottom top) seed'
+    (velDirection, seed''') = step (float 0 (pi * 2)) seed''
+    (velMagnitude, seed'''') = step (float 0 10) seed'''
   in
     ({ position = (x, y)
-     , velocity = (0, 0) -- TODO
+     , velocity = mul velMagnitude (cos velDirection, sin velDirection)
      , rotation = (0, 0) -- TODO
-     }, seed'')
+     }, seed'''')
 
-tick timeDelta asteroids =
-  asteroids
+tick timeDelta = map (moveAsteroid timeDelta)
+
+moveAsteroid timeDelta asteroid =
+  { asteroid | position =
+      add asteroid.position (mul timeDelta asteroid.velocity)
+      |> wrap bounds }
 
 draw = map drawAsteroid >> group
 
