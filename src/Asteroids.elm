@@ -12,6 +12,7 @@ type alias Asteroid =
   { position : Vector
   , velocity : Vector
   , rotation : Float
+  , rotationVelocity : Float
   }
 
 init =
@@ -32,18 +33,22 @@ initAsteroid =
         step angleGen >>= \velDirection ->
           step (float 0 10) >>= \velMagnitude ->
             step angleGen >>= \rotation ->
-              return
-                { position = (x, y)
-                , velocity = mul velMagnitude (cos velDirection, sin velDirection)
-                , rotation = rotation
-                }
+              step (float -0.5 0.5) >>= \rotationVelocity ->
+                return
+                  { position = (x, y)
+                  , velocity = mul velMagnitude (cos velDirection, sin velDirection)
+                  , rotation = rotation
+                  , rotationVelocity = rotationVelocity
+                  }
 
 tick timeDelta = map (moveAsteroid timeDelta)
 
 moveAsteroid timeDelta asteroid =
-  { asteroid | position =
+  { asteroid
+    | position =
       add asteroid.position (mul timeDelta asteroid.velocity)
-      |> wrap bounds }
+      |> wrap bounds
+    , rotation = asteroid.rotation + asteroid.rotationVelocity * timeDelta }
 
 draw = map drawAsteroid >> group
 
