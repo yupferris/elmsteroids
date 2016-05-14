@@ -2,16 +2,19 @@ module Vector exposing (Vector, add, mul, rotate, wrap)
 
 type alias Vector = (Float, Float)
 
+add : Vector -> Vector -> Vector
 add x y =
   let
     (xx, xy) = x
     (yx, yy) = y
   in (xx + yx, xy + yy)
 
+mul : Float -> Vector -> Vector
 mul scalar vector =
   let (x, y) = vector
   in (x * scalar, y * scalar)
 
+rotate : Float -> Vector -> Vector
 rotate angle vector =
   let
     (x, y) = vector
@@ -19,6 +22,7 @@ rotate angle vector =
     s = sin angle
   in (x * c + y * s, y * c - x * s)
 
+wrap : Vector -> Vector -> Vector
 wrap bounds vector =
   let
     (w, h) = bounds

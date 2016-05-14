@@ -1,7 +1,7 @@
 module Asteroids exposing (Asteroid, init, tick, draw)
 
 import List exposing (..)
-import Collage exposing (group, rect, filled, move)
+import Collage exposing (Form, group, rect, filled, move)
 import Color exposing (..)
 import Random exposing (Seed, int, float, step)
 import RandomProcessor exposing (..)
@@ -15,10 +15,12 @@ type alias Asteroid =
   , rotationVelocity : Float
   }
 
+init : Seed -> (List Asteroid, Seed)
 init =
   step (int 1 5) >>= \count ->
     init' count
 
+init' : Int -> Seed -> (List Asteroid, Seed)
 init' count =
   if count == 0 then return []
   else
@@ -26,6 +28,7 @@ init' count =
       init' (count - 1) >>= \acc ->
         return (asteroid :: acc)
 
+initAsteroid : Seed -> (Asteroid, Seed)
 initAsteroid =
   let angle = float 0 (pi * 2) |> step
   in
@@ -42,19 +45,24 @@ initAsteroid =
                   , rotationVelocity = rotationVelocity
                   }
 
+tick : Float -> List Asteroid -> List Asteroid
 tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)
 
+moveAsteroid : Float -> Asteroid -> Asteroid
 moveAsteroid timeDelta asteroid =
   { asteroid | position =
       add asteroid.position (mul timeDelta asteroid.velocity)
       |> wrap bounds }
 
+rotateAsteroid : Float -> Asteroid -> Asteroid
 rotateAsteroid timeDelta asteroid =
   { asteroid | rotation =
       asteroid.rotation + asteroid.rotationVelocity * timeDelta }
 
+draw : List Asteroid -> Form
 draw = map drawAsteroid >> group
 
+drawAsteroid : Asteroid -> Form
 drawAsteroid asteroid =
   rect 10 10
   |> filled red

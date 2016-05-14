@@ -1,10 +1,11 @@
 module Player exposing (Player, tick, draw)
 
-import Collage exposing (group)
+import Collage exposing (Form, group)
 import Color exposing (..)
 import Vector exposing (..)
 import Bounds exposing (..)
 import Ship
+import KeyStates exposing (KeyStates)
 
 type alias Player =
   { position : Vector
@@ -12,6 +13,7 @@ type alias Player =
   , rotation : Float
   }
 
+tick : Float -> KeyStates -> Player -> Player
 tick timeDelta keys player =
   let
     position =
@@ -40,6 +42,7 @@ tick timeDelta keys player =
       , rotation = rotation
     }
 
+draw : Player -> Form
 draw player =
   let
     position = player.position

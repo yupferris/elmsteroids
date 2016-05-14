@@ -1,3 +1,4 @@
+import Html exposing (..)
 import Html.App
 import Random exposing (..)
 import Time exposing (..)
@@ -28,6 +29,7 @@ type alias Model =
   , randomSeed : Seed
   }
 
+init : (Model, Cmd Msg)
 init =
   let
     -- TODO: Different seed each time
@@ -56,6 +58,7 @@ type Msg
   | KeyPressed KeyCode
   | KeyReleased KeyCode
 
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   (case msg of
      Tick timeDelta ->
@@ -70,6 +73,7 @@ update msg model =
      KeyReleased key -> { model | keys = KeyStates.released key model.keys }
   , Cmd.none)
 
+subscriptions : Model -> Sub Msg
 subscriptions _ =
   Sub.batch
     [ diffs (inSeconds >> Tick)
@@ -78,9 +82,10 @@ subscriptions _ =
     , ups KeyReleased
     ]
 
+view : Model -> Html Msg
 view model =
   collage
-    width height
+    (floor width) (floor height)
     [ rect width height |> filled black
     , Player.draw model.player
     , Asteroids.draw model.asteroids
