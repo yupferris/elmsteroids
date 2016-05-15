@@ -1,4 +1,4 @@
-module State exposing (State, return, (>>=))
+module State exposing (State, return, (>>=), fmap)
 
 type alias State s a = s -> (a, s)
 
@@ -10,3 +10,8 @@ return x = \state -> (x, state)
   \state ->
     let (x, state') = sp state
     in f x state'
+
+fmap : (a -> b) -> State s a -> State s b
+fmap f sp =
+  sp >>= \state ->
+    return (f state)

@@ -8,8 +8,8 @@ import Bullets exposing (Bullet)
 
 collide : List Asteroid -> List Bullet -> (List Asteroid, List Bullet)
 collide asteroids =
-  collide' asteroids >>= \asteroids ->
-    return (filterMap identity asteroids)
+  collide' asteroids
+    |> fmap (filterMap identity)
 
 collide' : List Asteroid -> List Bullet -> (List (Maybe Asteroid), List Bullet)
 collide' asteroids =
