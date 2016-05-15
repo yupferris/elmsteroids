@@ -5,7 +5,7 @@ import Collage exposing (Form, group, polygon, filled, outlined, move, defaultLi
 import Color exposing (..)
 import DrawWrapped exposing (..)
 import Random exposing (Seed, int, float, step)
-import RandomProcessor exposing (..)
+import State exposing (..)
 import Vector exposing (..)
 import Bounds exposing (..)
 

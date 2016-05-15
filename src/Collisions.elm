@@ -1,25 +1,15 @@
 module Collisions exposing (collide)
 
 import List exposing (filterMap)
+import State exposing (..)
 import Vector exposing (..)
 import Asteroids exposing (Asteroid)
 import Bullets exposing (Bullet)
 
-type alias CollisionProcessor a = List Bullet -> (a, List Bullet)
-
-return : a -> CollisionProcessor a
-return x = \bullets -> (x, bullets)
-
-(>>=) : CollisionProcessor a -> (a -> CollisionProcessor b) -> CollisionProcessor b
-(>>=) cp f =
-  \bullets ->
-    let (x, bullets') = cp bullets
-    in f x bullets'
-
 collide : List Asteroid -> List Bullet -> (List Asteroid, List Bullet)
 collide asteroids =
-  collide' asteroids >>= \asteroids' ->
-    return (filterMap (\x -> x) asteroids')
+  collide' asteroids >>= \asteroids ->
+    return (filterMap (\x -> x) asteroids)
 
 collide' : List Asteroid -> List Bullet -> (List (Maybe Asteroid), List Bullet)
 collide' asteroids =
