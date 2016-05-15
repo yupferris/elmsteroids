@@ -5,20 +5,30 @@ import Vector exposing (..)
 import Asteroids exposing (Asteroid)
 import Bullets exposing (Bullet)
 
+type alias CollisionProcessor a = List Bullet -> (a, List Bullet)
+
+return : a -> CollisionProcessor a
+return x = \bullets -> (x, bullets)
+
+(>>=) : CollisionProcessor a -> (a -> CollisionProcessor b) -> CollisionProcessor b
+(>>=) cp f =
+  \bullets ->
+    let (x, bullets') = cp bullets
+    in f x bullets'
+
 collide : List Asteroid -> List Bullet -> (List Asteroid, List Bullet)
-collide asteroids bullets =
-  let (asteroids', bullets') = collide' asteroids bullets
-  in (filterMap (\x -> x) asteroids', bullets')
+collide asteroids =
+  collide' asteroids >>= \asteroids' ->
+    return (filterMap (\x -> x) asteroids')
 
 collide' : List Asteroid -> List Bullet -> (List (Maybe Asteroid), List Bullet)
-collide' asteroids bullets =
+collide' asteroids =
   case asteroids of
-    [] -> ([], bullets)
+    [] -> return []
     x::xs ->
-      let
-        (x', bullets') = testAsteroid x bullets
-        (xs', bullets'') = collide' xs bullets'
-      in (x' :: xs', bullets'')
+      testAsteroid x >>= \x' ->
+        collide' xs >>= \xs' ->
+          return (x' :: xs')
 
 testAsteroid : Asteroid -> List Bullet -> (Maybe Asteroid, List Bullet)
 testAsteroid asteroid bullets =
