@@ -14,6 +14,7 @@ type alias Asteroid =
   , velocity : Vector
   , rotation : Float
   , rotationVelocity : Float
+  , radius : Float
   , points : List Vector
   }
 
@@ -40,23 +41,24 @@ initAsteroid =
           step (float 0 10) >>= \velMagnitude ->
             angle >>= \rotation ->
               step (float -0.5 0.5) >>= \rotationVelocity ->
-                initPoints >>= \points ->
-                  return
-                    { position = (x, y)
-                    , velocity = mul velMagnitude (cos velDirection, sin velDirection)
-                    , rotation = rotation
-                    , rotationVelocity = rotationVelocity
-                    , points = points
-                    }
+                step (float 20.0 70.0) >>= \radius ->
+                  initPoints radius >>= \points ->
+                    return
+                      { position = (x, y)
+                      , velocity = mul velMagnitude (cos velDirection, sin velDirection)
+                      , rotation = rotation
+                      , rotationVelocity = rotationVelocity
+                      , radius = radius
+                      , points = points
+                      }
 
-initPoints : Seed -> (List Vector, Seed)
-initPoints =
+initPoints : Float -> Seed -> (List Vector, Seed)
+initPoints radius =
   step (int 6 10) >>= \count ->
-    step (float 20.0 70.0) >>= \size ->
-      initPoints' count (pi * 2.0 / (toFloat count)) size
+    initPoints' count (pi * 2.0 / (toFloat count)) radius
 
 initPoints' : Int -> Float -> Float -> Seed -> (List Vector, Seed)
-initPoints' count segAngleDelta size =
+initPoints' count segAngleDelta radius =
   if count == 0 then return []
   else
     let angleOffset = toFloat count * segAngleDelta
@@ -64,11 +66,11 @@ initPoints' count segAngleDelta size =
       step (float (-segAngleDelta * 0.3) (segAngleDelta * 0.3)) >>= \angle ->
         let
           angle' = angle + angleOffset
-          x = cos angle' * size
-          y = sin angle' * size
+          x = cos angle' * radius
+          y = sin angle' * radius
           point = (x, y)
         in
-          initPoints' (count - 1) segAngleDelta size >>= \acc ->
+          initPoints' (count - 1) segAngleDelta radius >>= \acc ->
             return (point :: acc)
 
 tick : Float -> List Asteroid -> List Asteroid

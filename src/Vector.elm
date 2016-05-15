@@ -1,6 +1,11 @@
-module Vector exposing (Vector, add, mul, rotate, wrap)
+module Vector exposing (Vector, length, add, sub, mul, rotate, wrap)
 
 type alias Vector = (Float, Float)
+
+length : Vector -> Float
+length vector =
+  let (x, y) = vector
+  in sqrt (x ^ 2 + y ^ 2)
 
 add : Vector -> Vector -> Vector
 add x y =
@@ -8,6 +13,13 @@ add x y =
     (xx, xy) = x
     (yx, yy) = y
   in (xx + yx, xy + yy)
+
+sub : Vector -> Vector -> Vector
+sub x y =
+  let
+    (xx, xy) = x
+    (yx, yy) = y
+  in (xx - yx, xy - yy)
 
 mul : Float -> Vector -> Vector
 mul scalar vector =

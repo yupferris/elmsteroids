@@ -12,6 +12,7 @@ import Player exposing (Player)
 import Asteroids exposing (Asteroid)
 import Bullets exposing (Bullet)
 import KeyStates exposing (KeyStates)
+import Collisions exposing (..)
 
 main =
   Html.App.program
@@ -62,12 +63,18 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   (case msg of
      Tick timeDelta ->
-       { model
-       | player = Player.tick timeDelta model.keys model.player
-       , asteroids = Asteroids.tick timeDelta model.asteroids
-       , bullets = Bullets.tick timeDelta model.keys model.player model.bullets
-       , keys = KeyStates.tick model.keys
-       }
+       let
+         asteroids = Asteroids.tick timeDelta model.asteroids
+         bullets = Bullets.tick timeDelta model.keys model.player model.bullets
+
+         (asteroids', bullets') = collide asteroids bullets
+       in
+         { model
+         | player = Player.tick timeDelta model.keys model.player
+         , asteroids = asteroids'
+         , bullets = bullets'
+         , keys = KeyStates.tick model.keys
+         }
 
      KeyPressed key -> { model | keys = KeyStates.pressed key model.keys }
      KeyReleased key -> { model | keys = KeyStates.released key model.keys }
