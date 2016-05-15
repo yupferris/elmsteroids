@@ -95,7 +95,7 @@ drawAsteroid asteroid =
   let
     shape =
       asteroid.points
-      |> polygon
+        |> polygon
   in
     group
       [ shape |> filled black
