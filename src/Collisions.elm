@@ -8,17 +8,13 @@ import Bullets exposing (Bullet)
 
 collide : List Asteroid -> List Bullet -> (List Asteroid, List Bullet)
 collide asteroids =
-  collide' asteroids
-    |> fmap (filterMap identity)
+  filterMap identity <$> collide' asteroids
 
 collide' : List Asteroid -> List Bullet -> (List (Maybe Asteroid), List Bullet)
 collide' asteroids =
   case asteroids of
     [] -> return []
-    x::xs ->
-      testAsteroid x >>= \x' ->
-        collide' xs >>= \xs' ->
-          return (x' :: xs')
+    x::xs -> (::) <$> testAsteroid x <*> collide' xs
 
 testAsteroid : Asteroid -> List Bullet -> (Maybe Asteroid, List Bullet)
 testAsteroid asteroid bullets =
