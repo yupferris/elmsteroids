@@ -4,7 +4,7 @@ import Random exposing (..)
 import Time exposing (..)
 import AnimationFrame exposing (..)
 import Keyboard exposing (..)
-import Collage exposing (..)
+import Collage exposing (collage, rect, filled)
 import Element
 import Color exposing (..)
 import Bounds exposing (..)
@@ -22,7 +22,11 @@ main =
     , view = view
     }
 
-type alias Model =
+type Model
+  = Uninitialized
+  | Game GameState
+
+type alias GameState =
   { player : Player
   , asteroids : List Asteroid
   , bullets : List Bullet
@@ -31,71 +35,89 @@ type alias Model =
   }
 
 init : (Model, Cmd Msg)
-init =
-  let
-    -- TODO: Different seed each time
-    (asteroids, randomSeed) = initialSeed 12345 |> Asteroids.init
-
-  in
-    ({ player =
-         { position = (0, 0)
-         , velocity = (0, 0)
-         , rotation = 0
-         }
-     , asteroids = asteroids
-     , bullets = []
-     , keys =
-         { left = False
-         , right = False
-         , up = False
-         , down = False
-         , spaceTapped = False
-         }
-     , randomSeed = randomSeed
-     }, Cmd.none)
+init = (Uninitialized, Cmd.none)
 
 type Msg
-  = Tick Float -- Time value is always in seconds
+  = Init Time
+  | Tick Float -- Time value is always in seconds
   | KeyPressed KeyCode
   | KeyReleased KeyCode
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  (case msg of
-     Tick timeDelta ->
-       let
-         asteroids = Asteroids.tick timeDelta model.asteroids
-         bullets = Bullets.tick timeDelta model.keys model.player model.bullets
+  (case model of
+     Uninitialized ->
+       case msg of
+         Init time ->
+           let
+             ms = inMilliseconds time |> floor
+             (asteroids, randomSeed) = initialSeed ms |> Asteroids.init
 
-         (asteroids', bullets') = collide asteroids bullets
-       in
-         { model
-         | player = Player.tick timeDelta model.keys model.player
-         , asteroids = asteroids'
-         , bullets = bullets'
-         , keys = KeyStates.tick model.keys
-         }
+           in
+             Game
+               { player =
+                   { position = (0, 0)
+                   , velocity = (0, 0)
+                   , rotation = 0
+                   }
+               , asteroids = asteroids
+               , bullets = []
+               , keys =
+                   { left = False
+                   , right = False
+                   , up = False
+                   , down = False
+                   , spaceTapped = False
+                   }
+               , randomSeed = randomSeed
+               }
+         _ -> model
 
-     KeyPressed key -> { model | keys = KeyStates.pressed key model.keys }
-     KeyReleased key -> { model | keys = KeyStates.released key model.keys }
+     Game gameState ->
+       case msg of
+         Init _ -> model
+         Tick timeDelta ->
+           let
+             asteroids = Asteroids.tick timeDelta gameState.asteroids
+             bullets = Bullets.tick timeDelta gameState.keys gameState.player gameState.bullets
+
+             (asteroids', bullets') = collide asteroids bullets
+           in
+             Game
+               { gameState
+               | player = Player.tick timeDelta gameState.keys gameState.player
+               , asteroids = asteroids'
+               , bullets = bullets'
+               , keys = KeyStates.tick gameState.keys
+               }
+
+         KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
+         KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys }
+
   , Cmd.none)
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-  Sub.batch
-    [ diffs (inSeconds >> Tick)
+subscriptions model =
+  case model of
+    Uninitialized -> times Init
+    Game _ ->
+      Sub.batch
+        [ diffs (inSeconds >> Tick)
 
-    , downs KeyPressed
-    , ups KeyReleased
-    ]
+        , downs KeyPressed
+        , ups KeyReleased
+        ]
 
 view : Model -> Html Msg
 view model =
-  collage
-    (floor width) (floor height)
-    [ rect width height |> filled black
-    , Asteroids.draw model.asteroids
-    , Player.draw model.player
-    , Bullets.draw model.bullets
-    ]
-  |> Element.toHtml
+  case model of
+    Uninitialized -> text "Initializing..."
+    Game gameState ->
+      collage
+        (floor width) (floor height)
+        [ rect width height |> filled black
+        , Asteroids.draw gameState.asteroids
+        , Player.draw gameState.player
+        , Bullets.draw gameState.bullets
+        ]
+      |> Element.toHtml
