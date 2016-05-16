@@ -27,6 +27,10 @@ absolutePoints asteroid =
 
 liesInside : Vector -> Asteroid -> Bool
 liesInside point =
+  -- TODO: Handle wrapping
+  -- Currently it's possible to shoot through parts of an asteroid
+  -- that are wrapping around the screen. This will also be a
+  -- problem when checking for ship/asteroid collision.
   triangles >> any (Triangle.liesInside point)
 
 triangles : Asteroid -> List Triangle
