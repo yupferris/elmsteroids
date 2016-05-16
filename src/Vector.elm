@@ -1,4 +1,4 @@
-module Vector exposing (Vector, length, add, sub, mul, rotate, wrap)
+module Vector exposing (Vector, length, add, sub, mul, dot, rotate, wrap)
 
 type alias Vector = (Float, Float)
 
@@ -25,6 +25,13 @@ mul : Float -> Vector -> Vector
 mul scalar vector =
   let (x, y) = vector
   in (x * scalar, y * scalar)
+
+dot : Vector -> Vector -> Float
+dot x y =
+  let
+    (xx, xy) = x
+    (yx, yy) = y
+  in xx * yx + xy * yy
 
 rotate : Float -> Vector -> Vector
 rotate angle vector =

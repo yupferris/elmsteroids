@@ -1,12 +1,13 @@
-module Asteroids exposing (Asteroid, init, tick, draw)
+module Asteroids exposing (Asteroid, liesInside, init, tick, draw)
 
-import List exposing (..)
+import List exposing (map, any)
 import Collage exposing (Form, group, polygon, filled, outlined, move, defaultLine)
 import Color exposing (..)
 import DrawWrapped exposing (..)
 import Random exposing (Seed, int, float, step)
 import State exposing (..)
 import Vector exposing (..)
+import Triangle exposing (Triangle)
 import Bounds exposing (..)
 
 type alias Asteroid =
@@ -14,13 +15,48 @@ type alias Asteroid =
   , velocity : Vector
   , rotation : Float
   , rotationVelocity : Float
+  , size : Int
   , radius : Float
   , points : List Vector
   }
 
+absolutePoints : Asteroid -> List Vector
+absolutePoints asteroid =
+  asteroid.points
+    |> map (rotate asteroid.rotation >> add asteroid.position)
+
+liesInside : Vector -> Asteroid -> Bool
+liesInside point =
+  triangles >> any (Triangle.liesInside point)
+
+triangles : Asteroid -> List Triangle
+triangles asteroid =
+  let points = absolutePoints asteroid
+  in
+    case points of
+      [] -> []
+      x::_ -> triangles' asteroid.position x points
+
+triangles' : Vector -> Vector -> List Vector -> List Triangle
+triangles' centerPoint firstPoint points =
+  case points of
+    [] -> []
+    x::xs ->
+      let
+        next =
+          case xs of
+            [] -> firstPoint
+            y::_ -> y
+        triangle =
+          { a = centerPoint
+          , b = x
+          , c = next
+          }
+      in triangle :: triangles' centerPoint firstPoint xs
+
 init : Seed -> (List Asteroid, Seed)
 init =
-  step (int 3 8) >>= \count ->
+  step (int 2 3) >>= \count ->
     init' count
 
 init' : Int -> Seed -> (List Asteroid, Seed)
@@ -33,7 +69,14 @@ init' count =
 
 initAsteroid : Seed -> (Asteroid, Seed)
 initAsteroid =
-  let angle = float 0 (pi * 2) |> step
+  let
+    angle = float 0 (pi * 2) |> step
+    sizeGen size =
+      let
+        idealSize = toFloat size * 16.0
+        minSize = idealSize * 0.95
+        maxSize = idealSize * 1.05
+      in float minSize maxSize
   in
     step (float left right) >>= \x ->
       step (float bottom top) >>= \y ->
@@ -41,16 +84,18 @@ initAsteroid =
           step (float 0 10) >>= \velMagnitude ->
             angle >>= \rotation ->
               step (float -0.5 0.5) >>= \rotationVelocity ->
-                step (float 20.0 70.0) >>= \radius ->
-                  initPoints radius >>= \points ->
-                    return
-                      { position = (x, y)
-                      , velocity = mul velMagnitude (cos velDirection, sin velDirection)
-                      , rotation = rotation
-                      , rotationVelocity = rotationVelocity
-                      , radius = radius
-                      , points = points
-                      }
+                step (int 4 5) >>= \size ->
+                  step (sizeGen size) >>= \radius ->
+                    initPoints radius >>= \points ->
+                      return
+                        { position = (x, y)
+                        , velocity = mul velMagnitude (cos velDirection, sin velDirection)
+                        , rotation = rotation
+                        , rotationVelocity = rotationVelocity
+                        , size = size
+                        , radius = radius
+                        , points = points
+                        }
 
 initPoints : Float -> Seed -> (List Vector, Seed)
 initPoints radius =
