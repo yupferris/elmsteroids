@@ -1,7 +1,7 @@
 module Asteroids exposing (Asteroid, liesInside, init, tick, draw)
 
 import List exposing (map, any)
-import Collage exposing (Form, group, polygon, filled, outlined, move, defaultLine)
+import Collage exposing (Form, group, polygon, filled, outlined, defaultLine)
 import Color exposing (..)
 import DrawWrapped exposing (..)
 import Random exposing (Seed, int, float, step)
@@ -16,7 +16,6 @@ type alias Asteroid =
   , rotation : Float
   , rotationVelocity : Float
   , size : Int
-  , radius : Float
   , points : List Vector
   }
 
@@ -66,16 +65,13 @@ init =
 init' : Int -> Seed -> (List Asteroid, Seed)
 init' count =
   if count == 0 then return []
-  else
-    initAsteroid >>= \asteroid ->
-      init' (count - 1) >>= \acc ->
-        return (asteroid :: acc)
+  else (::) <$> initAsteroid <*> init' (count - 1)
 
 initAsteroid : Seed -> (Asteroid, Seed)
 initAsteroid =
   let
     angle = float 0 (pi * 2) |> step
-    sizeGen size =
+    radiusGen size =
       let
         idealSize = toFloat size * 16.0
         minSize = idealSize * 0.95
@@ -89,7 +85,7 @@ initAsteroid =
             angle >>= \rotation ->
               step (float -0.5 0.5) >>= \rotationVelocity ->
                 step (int 4 5) >>= \size ->
-                  step (sizeGen size) >>= \radius ->
+                  step (radiusGen size) >>= \radius ->
                     initPoints radius >>= \points ->
                       return
                         { position = (x, y)
@@ -97,7 +93,6 @@ initAsteroid =
                         , rotation = rotation
                         , rotationVelocity = rotationVelocity
                         , size = size
-                        , radius = radius
                         , points = points
                         }
 
@@ -114,13 +109,18 @@ initPoints' count segAngleDelta radius =
     in
       step (float (-segAngleDelta * 0.3) (segAngleDelta * 0.3)) >>= \angle ->
         let
-          angle' = angle + angleOffset
-          x = cos angle' * radius
-          y = sin angle' * radius
-          point = (x, y)
+          minRadius = radius * 0.4
+          maxRadius = radius * 1.2
         in
-          initPoints' (count - 1) segAngleDelta radius >>= \acc ->
-            return (point :: acc)
+          step (float minRadius maxRadius) >>= \radius' ->
+            let
+              angle' = angle + angleOffset
+              x = cos angle' * radius'
+              y = sin angle' * radius'
+              point = (x, y)
+            in
+              initPoints' (count - 1) segAngleDelta radius >>= \acc ->
+                return (point :: acc)
 
 tick : Float -> List Asteroid -> List Asteroid
 tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)
@@ -143,13 +143,12 @@ drawAsteroid : Asteroid -> Form
 drawAsteroid asteroid =
   let
     shape =
-      asteroid.points
+      asteroid
+        |> absolutePoints
         |> polygon
   in
     group
       [ shape |> filled black
       , shape |> outlined { defaultLine | color = white }
       ]
-    |> Collage.rotate asteroid.rotation
-    |> move asteroid.position
     |> drawWrapped
