@@ -94,8 +94,8 @@ view model =
   collage
     (floor width) (floor height)
     [ rect width height |> filled black
-    , Player.draw model.player
     , Asteroids.draw model.asteroids
+    , Player.draw model.player
     , Bullets.draw model.bullets
     ]
   |> Element.toHtml

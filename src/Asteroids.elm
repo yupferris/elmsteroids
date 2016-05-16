@@ -86,41 +86,43 @@ initAsteroid =
               step (float -0.5 0.5) >>= \rotationVelocity ->
                 step (int 4 5) >>= \size ->
                   step (radiusGen size) >>= \radius ->
-                    initPoints radius >>= \points ->
-                      return
-                        { position = (x, y)
-                        , velocity = mul velMagnitude (cos velDirection, sin velDirection)
-                        , rotation = rotation
-                        , rotationVelocity = rotationVelocity
-                        , size = size
-                        , points = points
-                        }
+                    let
+                      minRadius = radius * 0.8
+                      maxRadius = radius * 1.2
 
-initPoints : Float -> Seed -> (List Vector, Seed)
-initPoints radius =
-  step (int 6 10) >>= \count ->
-    initPoints' count (pi * 2.0 / (toFloat count)) radius
+                      safeZoneSize' = safeZoneSize + radius
+                    in
+                      initPoints minRadius maxRadius >>= \points ->
+                        return
+                          { position = (x, y) |> normalize |> mul safeZoneSize'
+                          , velocity = mul velMagnitude (cos velDirection, sin velDirection)
+                          , rotation = rotation
+                          , rotationVelocity = rotationVelocity
+                          , size = size
+                          , points = points
+                          }
 
-initPoints' : Int -> Float -> Float -> Seed -> (List Vector, Seed)
-initPoints' count segAngleDelta radius =
+initPoints : Float -> Float -> Seed -> (List Vector, Seed)
+initPoints minRadius maxRadius =
+  step (int 10 16) >>= \count ->
+    initPoints' count (pi * 2.0 / (toFloat count)) minRadius maxRadius
+
+initPoints' : Int -> Float -> Float -> Float -> Seed -> (List Vector, Seed)
+initPoints' count segAngleDelta minRadius maxRadius =
   if count == 0 then return []
   else
     let angleOffset = toFloat count * segAngleDelta
     in
       step (float (-segAngleDelta * 0.3) (segAngleDelta * 0.3)) >>= \angle ->
-        let
-          minRadius = radius * 0.4
-          maxRadius = radius * 1.2
-        in
-          step (float minRadius maxRadius) >>= \radius' ->
-            let
-              angle' = angle + angleOffset
-              x = cos angle' * radius'
-              y = sin angle' * radius'
-              point = (x, y)
-            in
-              initPoints' (count - 1) segAngleDelta radius >>= \acc ->
-                return (point :: acc)
+        step (float minRadius maxRadius) >>= \radius' ->
+          let
+            angle' = angle + angleOffset
+            x = cos angle' * radius'
+            y = sin angle' * radius'
+            point = (x, y)
+          in
+            initPoints' (count - 1) segAngleDelta minRadius maxRadius >>= \acc ->
+              return (point :: acc)
 
 tick : Float -> List Asteroid -> List Asteroid
 tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)

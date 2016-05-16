@@ -1,4 +1,4 @@
-module Bounds exposing (width, height, left, right, top, bottom, bounds)
+module Bounds exposing (width, height, left, right, top, bottom, bounds, safeZoneSize)
 
 import Vector exposing (..)
 
@@ -22,3 +22,6 @@ bottom = -height / 2
 
 bounds : Vector
 bounds = (width, height)
+
+safeZoneSize : Float
+safeZoneSize = 100

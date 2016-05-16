@@ -1,6 +1,6 @@
 module Ship exposing (front, draw)
 
-import Collage exposing (Form, group, polygon, outlined, defaultLine)
+import Collage exposing (Form, group, polygon, filled, outlined, defaultLine)
 import Color exposing (..)
 import Vector exposing (..)
 
@@ -19,6 +19,10 @@ draw position direction =
     front' = front position direction
     left' = left position direction
     right' = right position direction
+
+    form = polygon [front', left', right']
   in
-    polygon [front', left', right']
-    |> outlined { defaultLine | color = white }
+    group
+      [ form |> filled black
+      , form |> outlined { defaultLine | color = white }
+      ]
