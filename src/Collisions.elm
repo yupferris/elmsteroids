@@ -2,7 +2,7 @@ module Collisions exposing (collide)
 
 import List exposing (concat)
 import State exposing (..)
-import Asteroids exposing (Asteroid, liesInside)
+import Asteroids exposing (Asteroid, liesInside, split)
 import Bullets exposing (Bullet)
 
 collide : List Asteroid -> List Bullet -> (List Asteroid, List Bullet)

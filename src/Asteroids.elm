@@ -1,4 +1,4 @@
-module Asteroids exposing (Asteroid, liesInside, init, tick, draw)
+module Asteroids exposing (Asteroid, liesInside, split, init, tick, draw)
 
 import List exposing (map, any)
 import Collage exposing (Form, group, polygon, filled, outlined, defaultLine)
@@ -57,26 +57,39 @@ triangles' centerPoint firstPoint points =
           }
       in triangle :: triangles' centerPoint firstPoint xs
 
+split : Asteroid -> Seed -> (List Asteroid, Seed)
+split asteroid =
+  let
+    size = asteroid.size - 1
+    initAsteroid' = initAsteroid size size
+  in
+    if size > 0 then
+      -- TODO: Spawn relative to asteroid's position
+      -- Maybe also use velocity and stuff
+      initAsteroid' >>= \a ->
+        initAsteroid' >>= \b ->
+          return [a, b]
+    else return []
+
 init : Seed -> (List Asteroid, Seed)
-init =
-  step (int 2 3) >>= \count ->
-    init' count
+init = step (int 2 3) >>= init' 4 5
 
-init' : Int -> Seed -> (List Asteroid, Seed)
-init' count =
+init' : Int -> Int -> Int -> Seed -> (List Asteroid, Seed)
+init' minSize maxSize count =
   if count == 0 then return []
-  else (::) <$> initAsteroid <*> init' (count - 1)
+  else (::) <$> initAsteroid minSize maxSize <*> init' minSize maxSize (count - 1)
 
-initAsteroid : Seed -> (Asteroid, Seed)
-initAsteroid =
+initAsteroid : Int -> Int -> Seed -> (Asteroid, Seed)
+initAsteroid minSize maxSize =
+  -- TODO: Make smaller asteroids move faster
   let
     angle = float 0 (pi * 2) |> step
     radiusGen size =
       let
-        idealSize = toFloat size * 16.0
-        minSize = idealSize * 0.95
-        maxSize = idealSize * 1.05
-      in float minSize maxSize
+        idealRadius = toFloat size * 16.0
+        minRadius = idealRadius * 0.95
+        maxRadius = idealRadius * 1.05
+      in float minRadius maxRadius
   in
     step (float left right) >>= \x ->
       step (float bottom top) >>= \y ->
@@ -84,7 +97,7 @@ initAsteroid =
           step (float 0 10) >>= \velMagnitude ->
             angle >>= \rotation ->
               step (float -0.5 0.5) >>= \rotationVelocity ->
-                step (int 4 5) >>= \size ->
+                step (int minSize maxSize) >>= \size ->
                   step (radiusGen size) >>= \radius ->
                     let
                       minRadius = radius * 0.8
