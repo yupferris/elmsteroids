@@ -83,10 +83,9 @@ init' minSize maxSize count =
       <$> initAsteroid left right bottom top minSize maxSize
       <*> init' minSize maxSize (count - 1)
 
+-- TODO: Consider proper bounds type
 initAsteroid : Float -> Float -> Float -> Float -> Int -> Int -> Seed -> (Asteroid, Seed)
 initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
-  -- TODO: Consider proper bounds type
-  -- TODO: Make smaller asteroids move/rotate faster
   let
     angle = float 0 (pi * 2) |> step
     radiusGen size =
@@ -98,11 +97,11 @@ initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
   in
     step (float boundsLeft boundsRight) >>= \x ->
       step (float boundsBottom boundsTop) >>= \y ->
-        angle >>= \velDirection ->
-          step (float 0 10) >>= \velMagnitude ->
-            angle >>= \rotation ->
-              step (float -0.5 0.5) >>= \rotationVelocity ->
-                step (int minSize maxSize) >>= \size ->
+        step (int minSize maxSize) >>= \size ->
+          angle >>= \velDirection ->
+            step (float 40 (100 / toFloat (size ^ 4))) >>= \velMagnitude ->
+              angle >>= \rotation ->
+                step (float -0.5 0.5) >>= \rotationVelocity ->
                   step (radiusGen size) >>= \radius ->
                     let
                       minRadius = radius * 0.8
