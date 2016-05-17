@@ -8,6 +8,7 @@ import Random exposing (Seed, int, float, step)
 import State exposing (..)
 import Vector exposing (..)
 import Triangle exposing (Triangle)
+import Segment exposing (Segment, center)
 import Bounds exposing (..)
 
 type alias Asteroid =
@@ -34,14 +35,25 @@ liesInside point =
 
 triangles : Asteroid -> List Triangle
 triangles asteroid =
+  asteroid
+    |> segments
+    |> map
+       (\segment ->
+          { a = segment.a
+          , b = segment.b
+          , c = asteroid.position
+          })
+
+segments : Asteroid -> List Segment
+segments asteroid =
   let points = absolutePoints asteroid
   in
     case points of
       [] -> []
-      x::_ -> triangles' asteroid.position x points
+      x::_ -> segments' x points
 
-triangles' : Vector -> Vector -> List Vector -> List Triangle
-triangles' centerPoint firstPoint points =
+segments' : Vector -> List Vector -> List Segment
+segments' firstPoint points =
   case points of
     [] -> []
     x::xs ->
@@ -50,12 +62,12 @@ triangles' centerPoint firstPoint points =
           case xs of
             [] -> firstPoint
             y::_ -> y
-        triangle =
-          { a = centerPoint
-          , b = x
-          , c = next
+        segment =
+          { a = x
+          , b = next
           }
-      in triangle :: triangles' centerPoint firstPoint xs
+      in segment :: segments' firstPoint xs
+
 
 split : Asteroid -> Seed -> (List Asteroid, Seed)
 split asteroid =

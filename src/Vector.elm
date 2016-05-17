@@ -1,4 +1,4 @@
-module Vector exposing (Vector, length, normalize, add, sub, mul, dot, rotate, wrap)
+module Vector exposing (Vector, length, normalize, add, sub, mul, div, dot, rotate, wrap)
 
 type alias Vector = (Float, Float)
 
