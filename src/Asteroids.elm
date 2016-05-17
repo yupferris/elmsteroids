@@ -59,16 +59,17 @@ triangles' centerPoint firstPoint points =
 
 split : Asteroid -> Seed -> (List Asteroid, Seed)
 split asteroid =
-  let
-    size = asteroid.size - 1
-    initAsteroid' = initAsteroid size size
+  let size = asteroid.size - 1
   in
     if size > 0 then
-      -- TODO: Spawn relative to asteroid's position
-      -- Maybe also use velocity and stuff
-      initAsteroid' >>= \a ->
-        initAsteroid' >>= \b ->
-          return [a, b]
+      let
+        (boundsLeft, boundsBottom) = asteroid.position
+        (boundsRight, boundsTop) = asteroid.position
+        initAsteroid' = initAsteroid boundsLeft boundsRight boundsBottom boundsTop size size
+      in
+        initAsteroid' >>= \a ->
+          initAsteroid' >>= \b ->
+            return [a, b]
     else return []
 
 init : Seed -> (List Asteroid, Seed)
@@ -77,11 +78,15 @@ init = step (int 2 3) >>= init' 4 5
 init' : Int -> Int -> Int -> Seed -> (List Asteroid, Seed)
 init' minSize maxSize count =
   if count == 0 then return []
-  else (::) <$> initAsteroid minSize maxSize <*> init' minSize maxSize (count - 1)
+  else
+    (::)
+      <$> initAsteroid left right bottom top minSize maxSize
+      <*> init' minSize maxSize (count - 1)
 
-initAsteroid : Int -> Int -> Seed -> (Asteroid, Seed)
-initAsteroid minSize maxSize =
-  -- TODO: Make smaller asteroids move faster
+initAsteroid : Float -> Float -> Float -> Float -> Int -> Int -> Seed -> (Asteroid, Seed)
+initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
+  -- TODO: Consider proper bounds type
+  -- TODO: Make smaller asteroids move/rotate faster
   let
     angle = float 0 (pi * 2) |> step
     radiusGen size =
@@ -91,8 +96,8 @@ initAsteroid minSize maxSize =
         maxRadius = idealRadius * 1.05
       in float minRadius maxRadius
   in
-    step (float left right) >>= \x ->
-      step (float bottom top) >>= \y ->
+    step (float boundsLeft boundsRight) >>= \x ->
+      step (float boundsBottom boundsTop) >>= \y ->
         angle >>= \velDirection ->
           step (float 0 10) >>= \velMagnitude ->
             angle >>= \rotation ->
