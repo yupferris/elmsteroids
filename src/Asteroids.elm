@@ -7,9 +7,10 @@ import DrawWrapped exposing (..)
 import Random exposing (Seed, int, float, step)
 import State exposing (..)
 import Vector exposing (..)
-import Triangle exposing (Triangle)
-import Segment exposing (Segment, center)
+import Segment exposing (..)
+import Triangle exposing (..)
 import Bounds exposing (..)
+import SegmentParticles exposing (SegmentParticle, segmentParticle)
 
 type alias Asteroid =
   { position : Vector
@@ -69,25 +70,33 @@ segments' firstPoint points =
       in segment :: segments' firstPoint xs
 
 
-split : Asteroid -> Seed -> (List Asteroid, Seed)
+split : Asteroid -> State Seed (List Asteroid, List SegmentParticle)
 split asteroid =
-  let size = asteroid.size - 1
-  in
-    if size > 0 then
-      let
-        (boundsLeft, boundsBottom) = asteroid.position
-        (boundsRight, boundsTop) = asteroid.position
-        initAsteroid' = initAsteroid boundsLeft boundsRight boundsBottom boundsTop size size
-      in
-        initAsteroid' >>= \a ->
-          initAsteroid' >>= \b ->
-            return [a, b]
-    else return []
+  segmentParticles asteroid.velocity (segments asteroid) >>= \particles ->
+    let size = asteroid.size - 1
+    in
+      if size > 0 then
+        let
+          (boundsLeft, boundsBottom) = asteroid.position
+          (boundsRight, boundsTop) = asteroid.position
+          initAsteroid' = initAsteroid boundsLeft boundsRight boundsBottom boundsTop size size
+        in
+          initAsteroid' >>= \a ->
+            initAsteroid' >>= \b ->
+              return ([a, b], particles)
+      else return ([], particles)
+
+segmentParticles : Vector -> List Segment -> State Seed (List SegmentParticle)
+segmentParticles initialVelocity segments =
+  case segments of
+    [] -> return []
+    x::xs ->
+      (::) <$> segmentParticle initialVelocity x <*> segmentParticles initialVelocity xs
 
 init : Seed -> (List Asteroid, Seed)
 init = step (int 2 3) >>= init' 4 5
 
-init' : Int -> Int -> Int -> Seed -> (List Asteroid, Seed)
+init' : Int -> Int -> Int -> State Seed (List Asteroid)
 init' minSize maxSize count =
   if count == 0 then return []
   else
@@ -96,7 +105,7 @@ init' minSize maxSize count =
       <*> init' minSize maxSize (count - 1)
 
 -- TODO: Consider proper bounds type
-initAsteroid : Float -> Float -> Float -> Float -> Int -> Int -> Seed -> (Asteroid, Seed)
+initAsteroid : Float -> Float -> Float -> Float -> Int -> Int -> State Seed Asteroid
 initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
   let
     angle = float 0 (pi * 2) |> step
@@ -129,19 +138,19 @@ initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
                       initPoints minRadius maxRadius >>= \points ->
                         return
                           { position = position'
-                          , velocity = mul velMagnitude (cos velDirection, sin velDirection)
+                          , velocity = rotate velDirection (0, velMagnitude)
                           , rotation = rotation
                           , rotationVelocity = rotationVelocity
                           , size = size
                           , points = points
                           }
 
-initPoints : Float -> Float -> Seed -> (List Vector, Seed)
+initPoints : Float -> Float -> State Seed (List Vector)
 initPoints minRadius maxRadius =
   step (int 10 16) >>= \count ->
     initPoints' count (pi * 2.0 / (toFloat count)) minRadius maxRadius
 
-initPoints' : Int -> Float -> Float -> Float -> Seed -> (List Vector, Seed)
+initPoints' : Int -> Float -> Float -> Float -> State Seed (List Vector)
 initPoints' count segAngleDelta minRadius maxRadius =
   if count == 0 then return []
   else

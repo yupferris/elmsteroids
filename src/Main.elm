@@ -11,6 +11,7 @@ import Bounds exposing (..)
 import Player exposing (Player)
 import Asteroids exposing (Asteroid)
 import Bullets exposing (Bullet)
+import SegmentParticles exposing (SegmentParticle)
 import KeyStates exposing (KeyStates)
 import Collisions exposing (..)
 
@@ -30,6 +31,7 @@ type alias GameState =
   { player : Player
   , asteroids : List Asteroid
   , bullets : List Bullet
+  , segmentParticles : List SegmentParticle
   , keys : KeyStates
   , randomSeed : Seed
   }
@@ -77,6 +79,7 @@ initGame time =
         }
     , asteroids = asteroids
     , bullets = []
+    , segmentParticles = []
     , keys =
         { left = False
         , right = False
@@ -94,12 +97,13 @@ tickGame timeDelta gameState =
     asteroids = Asteroids.tick timeDelta gameState.asteroids
     bullets = Bullets.tick timeDelta gameState.keys gameState.player gameState.bullets
 
-    ((asteroids', bullets'), randomSeed) = collide asteroids bullets gameState.randomSeed
+    ((asteroids', bullets', segmentParticles), randomSeed) = collide asteroids bullets gameState.randomSeed
   in
     { gameState
       | player = Player.tick timeDelta gameState.keys gameState.player
       , asteroids = asteroids'
       , bullets = bullets'
+      , segmentParticles = SegmentParticles.tick timeDelta gameState.segmentParticles ++ segmentParticles
       , keys = KeyStates.tick gameState.keys
       , randomSeed = randomSeed
     }
@@ -127,5 +131,6 @@ view model =
         , Asteroids.draw gameState.asteroids
         , Player.draw gameState.player
         , Bullets.draw gameState.bullets
+        , SegmentParticles.draw gameState.segmentParticles
         ]
       |> Element.toHtml
