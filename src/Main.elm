@@ -39,7 +39,7 @@ init = (Uninitialized, Cmd.none)
 
 type Msg
   = Init Time
-  | Tick Float -- Time value is always in seconds
+  | Tick Time
   | KeyPressed KeyCode
   | KeyReleased KeyCode
 
@@ -48,54 +48,61 @@ update msg model =
   (case model of
      Uninitialized ->
        case msg of
-         Init time ->
-           let
-             ms = inMilliseconds time |> floor
-             (asteroids, randomSeed) = initialSeed ms |> Asteroids.init
-
-           in
-             Game
-               { player =
-                   { position = (0, 0)
-                   , velocity = (0, 0)
-                   , rotation = 0
-                   }
-               , asteroids = asteroids
-               , bullets = []
-               , keys =
-                   { left = False
-                   , right = False
-                   , up = False
-                   , down = False
-                   , spaceTapped = False
-                   }
-               , randomSeed = randomSeed
-               }
+         Init time -> Game (initGame time)
          _ -> model
 
      Game gameState ->
-       case msg of
-         Init _ -> model
-         Tick timeDelta ->
-           let
-             asteroids = Asteroids.tick timeDelta gameState.asteroids
-             bullets = Bullets.tick timeDelta gameState.keys gameState.player gameState.bullets
+       Game
+         (case msg of
+            Init _ -> gameState
+            Tick timeDelta -> tickGame (inSeconds timeDelta) gameState
 
-             ((asteroids', bullets'), randomSeed') = collide asteroids bullets gameState.randomSeed
-           in
-             Game
-               { gameState
-               | player = Player.tick timeDelta gameState.keys gameState.player
-               , asteroids = asteroids'
-               , bullets = bullets'
-               , keys = KeyStates.tick gameState.keys
-               , randomSeed = randomSeed'
-               }
-
-         KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
-         KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys }
+            KeyPressed key -> { gameState | keys = KeyStates.pressed key gameState.keys }
+            KeyReleased key -> { gameState | keys = KeyStates.released key gameState.keys }
+         )
 
   , Cmd.none)
+
+initGame : Time -> GameState
+initGame time =
+  let
+    ms = inMilliseconds time |> floor
+    (asteroids, randomSeed) = initialSeed ms |> Asteroids.init
+
+  in
+    { player =
+        { position = (0, 0)
+        , velocity = (0, 0)
+        , rotation = 0
+        }
+    , asteroids = asteroids
+    , bullets = []
+    , keys =
+        { left = False
+        , right = False
+        , up = False
+        , down = False
+        , spaceTapped = False
+        }
+    , randomSeed = randomSeed
+    }
+
+-- Time value is always in seconds
+tickGame : Float -> GameState -> GameState
+tickGame timeDelta gameState =
+  let
+    asteroids = Asteroids.tick timeDelta gameState.asteroids
+    bullets = Bullets.tick timeDelta gameState.keys gameState.player gameState.bullets
+
+    ((asteroids', bullets'), randomSeed) = collide asteroids bullets gameState.randomSeed
+  in
+    { gameState
+      | player = Player.tick timeDelta gameState.keys gameState.player
+      , asteroids = asteroids'
+      , bullets = bullets'
+      , keys = KeyStates.tick gameState.keys
+      , randomSeed = randomSeed
+    }
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
@@ -103,7 +110,7 @@ subscriptions model =
     Uninitialized -> times Init
     Game _ ->
       Sub.batch
-        [ diffs (inSeconds >> Tick)
+        [ diffs Tick
 
         , downs KeyPressed
         , ups KeyReleased
