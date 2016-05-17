@@ -104,10 +104,15 @@ initAsteroid minSize maxSize =
                       maxRadius = radius * 1.2
 
                       safeZoneSize' = safeZoneSize + radius
+                      position = (x, y)
+                      position' =
+                        if length position < safeZoneSize' then
+                          position |> normalize |> mul safeZoneSize'
+                        else position
                     in
                       initPoints minRadius maxRadius >>= \points ->
                         return
-                          { position = (x, y) |> normalize |> mul safeZoneSize'
+                          { position = position'
                           , velocity = mul velMagnitude (cos velDirection, sin velDirection)
                           , rotation = rotation
                           , rotationVelocity = rotationVelocity
