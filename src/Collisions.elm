@@ -1,26 +1,33 @@
 module Collisions exposing (collide)
 
 import List exposing (concat)
+import Random exposing (..)
 import State exposing (..)
 import Asteroids exposing (Asteroid, liesInside, split)
 import Bullets exposing (Bullet)
 
-collide : List Asteroid -> List Bullet -> (List Asteroid, List Bullet)
-collide asteroids =
-  concat <$> collide' asteroids
+collide : List Asteroid -> List Bullet -> State Seed (List Asteroid, List Bullet)
+collide asteroids bullets =
+  collide' asteroids bullets >>= \(asteroids', bullets') ->
+    return (concat asteroids', bullets')
 
-collide' : List Asteroid -> List Bullet -> (List (List Asteroid), List Bullet)
-collide' asteroids =
+collide' : List Asteroid -> List Bullet -> State Seed (List (List Asteroid), List Bullet)
+collide' asteroids bullets =
   case asteroids of
-    [] -> return []
-    x::xs -> (::) <$> testAsteroid x <*> collide' xs
+    [] -> return ([], bullets)
+    x::xs ->
+      testAsteroid x bullets >>= \(x', bullets') ->
+        collide' xs bullets' >>= \(xs', bullets'') ->
+          return (x' :: xs', bullets'')
 
-testAsteroid : Asteroid -> List Bullet -> (List Asteroid, List Bullet)
+testAsteroid : Asteroid -> List Bullet -> State Seed (List Asteroid, List Bullet)
 testAsteroid asteroid bullets =
   case bullets of
-    [] -> ([asteroid], [])
+    [] -> return ([asteroid], [])
     x::xs ->
-      if liesInside x.position asteroid then ([], xs)
+      if liesInside x.position asteroid then
+        split asteroid >>= \asteroids ->
+          return (asteroids, xs)
       else
-        let (asteroid', xs') = testAsteroid asteroid xs
-        in (asteroid', x :: xs')
+        testAsteroid asteroid xs >>= \(asteroids, xs') ->
+          return (asteroids, x :: xs')

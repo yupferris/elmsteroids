@@ -81,7 +81,7 @@ update msg model =
              asteroids = Asteroids.tick timeDelta gameState.asteroids
              bullets = Bullets.tick timeDelta gameState.keys gameState.player gameState.bullets
 
-             (asteroids', bullets') = collide asteroids bullets
+             ((asteroids', bullets'), randomSeed') = collide asteroids bullets gameState.randomSeed
            in
              Game
                { gameState
@@ -89,6 +89,7 @@ update msg model =
                , asteroids = asteroids'
                , bullets = bullets'
                , keys = KeyStates.tick gameState.keys
+               , randomSeed = randomSeed'
                }
 
          KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
