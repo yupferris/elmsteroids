@@ -1,6 +1,6 @@
 module Hud exposing (draw)
 
-import Collage exposing (Form, group, moveY)
+import Collage exposing (Form, moveY)
 import DefaultText exposing (..)
 import Bounds exposing (..)
 

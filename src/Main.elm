@@ -17,6 +17,7 @@ import SegmentParticles exposing (SegmentParticle)
 import KeyStates exposing (KeyStates)
 import Collisions exposing (..)
 import Hud
+import Title
 
 main =
   Html.App.program
@@ -138,11 +139,7 @@ view model =
         , Player.draw gameState.player
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
-
         , Hud.draw gameState.score
-
-        -- TODO
-        --, defaultText 40 "elmsteroids" |> moveY 70
-        --, defaultText 16 "github.com/yupferris // 2016" |> moveY -50
+        , Title.draw
         ]
         |> Element.toHtml
