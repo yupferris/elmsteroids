@@ -140,6 +140,6 @@ view model =
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
         , Hud.draw gameState.score
-        , Title.draw
+        --, Title.draw
         ]
         |> Element.toHtml

@@ -9,7 +9,7 @@ import State exposing (..)
 import Vector exposing (..)
 import Segment exposing (..)
 import Triangle exposing (..)
-import Bounds exposing (..)
+import Bounds
 import SegmentParticles exposing (SegmentParticle, segmentParticle)
 
 type alias Asteroid =
@@ -77,9 +77,9 @@ split asteroid =
     in
       if size > 0 then
         let
-          (boundsLeft, boundsBottom) = asteroid.position
-          (boundsRight, boundsTop) = asteroid.position
-          initAsteroid' = initAsteroid boundsLeft boundsRight boundsBottom boundsTop size size
+          (left, bottom) = asteroid.position
+          (right, top) = asteroid.position
+          initAsteroid' = initAsteroid left right bottom top Nothing size size
         in
           initAsteroid' >>= \a ->
             initAsteroid' >>= \b ->
@@ -101,12 +101,12 @@ init' minSize maxSize count =
   if count == 0 then return []
   else
     (::)
-      <$> initAsteroid left right bottom top minSize maxSize
+      <$> initAsteroid Bounds.left Bounds.right Bounds.bottom Bounds.top (Just Bounds.safeZoneSize) minSize maxSize
       <*> init' minSize maxSize (count - 1)
 
 -- TODO: Consider proper bounds type
-initAsteroid : Float -> Float -> Float -> Float -> Int -> Int -> State Seed Asteroid
-initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
+initAsteroid : Float -> Float -> Float -> Float -> Maybe Float -> Int -> Int -> State Seed Asteroid
+initAsteroid left right bottom top safeZoneSize minSize maxSize =
   let
     angle = float 0 (pi * 2) |> step
     radiusGen size =
@@ -116,8 +116,8 @@ initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
         maxRadius = idealRadius * 1.05
       in float minRadius maxRadius
   in
-    step (float boundsLeft boundsRight) >>= \x ->
-      step (float boundsBottom boundsTop) >>= \y ->
+    step (float left right) >>= \x ->
+      step (float bottom top) >>= \y ->
         step (int minSize maxSize) >>= \size ->
           angle >>= \velDirection ->
             step (float 40 (100 / toFloat (size ^ 4))) >>= \velMagnitude ->
@@ -128,17 +128,22 @@ initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
                       minRadius = radius * 0.8
                       maxRadius = radius * 1.2
 
-                      -- TODO: Make safe zone optional
-                      safeZoneSize' = safeZoneSize + radius
-                      position = (x, y)
-                      position' =
-                        if length position < safeZoneSize' then
-                          position |> normalize |> mul safeZoneSize'
-                        else position
+                      position =
+                        let
+                          p = (x, y)
+                        in
+                          case safeZoneSize of
+                            Just s ->
+                                 let safeZoneSize' = s + radius
+                                 in
+                                   if length p < safeZoneSize' then
+                                     p |> normalize |> mul safeZoneSize'
+                                   else p
+                            _ -> p
                     in
                       initPoints minRadius maxRadius >>= \points ->
                         return
-                          { position = position'
+                          { position = position
                           , velocity = rotate velDirection (0, velMagnitude)
                           , rotation = rotation
                           , rotationVelocity = rotationVelocity
@@ -175,7 +180,7 @@ moveAsteroid : Float -> Asteroid -> Asteroid
 moveAsteroid timeDelta asteroid =
   { asteroid | position =
       add asteroid.position (mul timeDelta asteroid.velocity)
-      |> wrap bounds }
+      |> wrap Bounds.bounds }
 
 rotateAsteroid : Float -> Asteroid -> Asteroid
 rotateAsteroid timeDelta asteroid =
