@@ -128,6 +128,7 @@ initAsteroid boundsLeft boundsRight boundsBottom boundsTop minSize maxSize =
                       minRadius = radius * 0.8
                       maxRadius = radius * 1.2
 
+                      -- TODO: Make safe zone optional
                       safeZoneSize' = safeZoneSize + radius
                       position = (x, y)
                       position' =

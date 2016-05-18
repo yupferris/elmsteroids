@@ -1,12 +1,14 @@
-import Html exposing (..)
+import Html exposing (Html)
 import Html.App
 import Random exposing (..)
 import Time exposing (..)
 import AnimationFrame exposing (..)
 import Keyboard exposing (..)
-import Collage exposing (collage, rect, filled)
+import Text exposing (fromString, style, link)
+import Collage exposing (collage, rect, filled, text, moveY)
 import Element
 import Color exposing (..)
+import DefaultText exposing (..)
 import Bounds exposing (..)
 import Player exposing (Player)
 import Asteroids exposing (Asteroid)
@@ -14,6 +16,7 @@ import Bullets exposing (Bullet)
 import SegmentParticles exposing (SegmentParticle)
 import KeyStates exposing (KeyStates)
 import Collisions exposing (..)
+import Hud
 
 main =
   Html.App.program
@@ -28,7 +31,8 @@ type Model
   | Game GameState
 
 type alias GameState =
-  { player : Player
+  { score : Int
+  , player : Player
   , asteroids : List Asteroid
   , bullets : List Bullet
   , segmentParticles : List SegmentParticle
@@ -72,7 +76,8 @@ initGame time =
     (asteroids, randomSeed) = initialSeed ms |> Asteroids.init
 
   in
-    { player =
+    { score = 0
+    , player =
         { position = (0, 0)
         , velocity = (0, 0)
         , rotation = 0
@@ -97,10 +102,11 @@ tickGame timeDelta gameState =
     asteroids = Asteroids.tick timeDelta gameState.asteroids
     bullets = Bullets.tick timeDelta gameState.keys gameState.player gameState.bullets
 
-    ((asteroids', bullets', segmentParticles), randomSeed) = collide asteroids bullets gameState.randomSeed
+    ((asteroids', bullets', segmentParticles, score), randomSeed) = collide asteroids bullets gameState.randomSeed
   in
     { gameState
-      | player = Player.tick timeDelta gameState.keys gameState.player
+      | score = gameState.score + score
+      , player = Player.tick timeDelta gameState.keys gameState.player
       , asteroids = asteroids'
       , bullets = bullets'
       , segmentParticles = SegmentParticles.tick timeDelta gameState.segmentParticles ++ segmentParticles
@@ -123,7 +129,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   case model of
-    Uninitialized -> text "Initializing..."
+    Uninitialized -> Html.text "Initializing..."
     Game gameState ->
       collage
         (floor width) (floor height)
@@ -132,5 +138,11 @@ view model =
         , Player.draw gameState.player
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
+
+        , Hud.draw gameState.score
+
+        -- TODO
+        --, defaultText 40 "elmsteroids" |> moveY 70
+        --, defaultText 16 "github.com/yupferris // 2016" |> moveY -50
         ]
-      |> Element.toHtml
+        |> Element.toHtml
