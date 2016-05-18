@@ -9,27 +9,26 @@ import SegmentParticles exposing (SegmentParticle)
 
 collide : List Asteroid -> List Bullet -> State Seed (List Asteroid, List Bullet, List SegmentParticle)
 collide asteroids bullets =
-  collide' asteroids bullets >>= \(asteroidsAndParticles, bullets') ->
-    let (asteroids', particles) = unzip asteroidsAndParticles
-    in return (concat asteroids', bullets', concat particles)
+  collide' asteroids bullets >>= \(asteroids, bullets', particles) ->
+    return (concat asteroids, bullets', concat particles)
 
-collide' : List Asteroid -> List Bullet -> State Seed (List (List Asteroid, List SegmentParticle), List Bullet)
+collide' : List Asteroid -> List Bullet -> State Seed (List (List Asteroid), List Bullet, List (List SegmentParticle))
 collide' asteroids bullets =
   case asteroids of
-    [] -> return ([], bullets)
+    [] -> return ([], bullets, [])
     x::xs ->
-      testAsteroid x bullets >>= \(asteroids', particles, bullets') ->
-        collide' xs bullets' >>= \(xs', bullets'') ->
-          return ((asteroids', particles) :: xs', bullets'')
+      testAsteroid x bullets >>= \(asteroids', bullets', particles) ->
+        collide' xs bullets' >>= \(xs', bullets'', particles') ->
+          return (asteroids' :: xs', bullets'', particles :: particles')
 
-testAsteroid : Asteroid -> List Bullet -> State Seed (List Asteroid, List SegmentParticle, List Bullet)
+testAsteroid : Asteroid -> List Bullet -> State Seed (List Asteroid, List Bullet, List SegmentParticle)
 testAsteroid asteroid bullets =
   case bullets of
     [] -> return ([asteroid], [], [])
     x::xs ->
       if liesInside x.position asteroid then
         split asteroid >>= \(asteroids, particles) ->
-          return (asteroids, particles, xs)
+          return (asteroids, xs, particles)
       else
-        testAsteroid asteroid xs >>= \(asteroids, particles, xs') ->
-          return (asteroids, particles, x :: xs')
+        testAsteroid asteroid xs >>= \(asteroids, xs', particles) ->
+          return (asteroids, x :: xs', particles)
