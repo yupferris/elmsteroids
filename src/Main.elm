@@ -65,7 +65,7 @@ update msg model =
   (case model of
      Uninitialized ->
        case msg of
-         Init time -> Title (initTitle time)--Game (initGame time)
+         Init time -> Title (initTitle time)
          _ -> model
 
      Title titleState ->
@@ -109,7 +109,6 @@ initStarsAndAsteroids : State Seed (List Star, List Asteroid)
 initStarsAndAsteroids =
   Stars.init >>= \stars -> Asteroids.init >>= \asteroids -> return (stars, asteroids)
 
--- Time value is always in seconds
 tickTitle : Float -> TitleState -> TitleState
 tickTitle timeDelta titleState =
   { titleState
@@ -139,7 +138,6 @@ initGame stars asteroids randomSeed =
   , randomSeed = randomSeed
   }
 
--- Time value is always in seconds
 tickGame : Float -> GameState -> GameState
 tickGame timeDelta gameState =
   let
