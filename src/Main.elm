@@ -5,7 +5,7 @@ import Time exposing (..)
 import AnimationFrame exposing (..)
 import Keyboard exposing (..)
 import Text exposing (fromString, style, link)
-import Collage exposing (Form, collage, group, rect, filled, text, moveY)
+import Collage exposing (Form, collage, group, rect, filled, text, moveY, scale, alpha)
 import Element
 import Color exposing (..)
 import State exposing (..)
@@ -17,6 +17,7 @@ import Asteroids exposing (Asteroid)
 import Bullets exposing (Bullet)
 import SegmentParticles exposing (SegmentParticle)
 import KeyStates exposing (KeyStates)
+import Ship
 import Collisions exposing (..)
 import Hud
 
@@ -41,14 +42,20 @@ type alias TitleState =
   }
 
 type alias PreGameState =
-  { score : Int
+  { sector : Int
+  , score : Int
   , stars : List Star
   , asteroids : List Asteroid
   , randomSeed : Seed
+  , stateTime : Float
   }
 
+preGameLength : Float
+preGameLength = 3
+
 type alias GameState =
-  { score : Int
+  { sector : Int
+  , score : Int
   , stars : List Star
   , player : Player
   , asteroids : List Asteroid
@@ -56,7 +63,11 @@ type alias GameState =
   , segmentParticles : List SegmentParticle
   , keys : KeyStates
   , randomSeed : Seed
+  , stateTime : Float
   }
+
+invincibleLength : Float
+invincibleLength = 5
 
 init : (Model, Cmd Msg)
 init = (Uninitialized, Cmd.none)
@@ -83,33 +94,27 @@ update msg model =
             let enter = 13
             in
               if key == enter then
-                PreGame (initPreGame 0 titleState.stars titleState.asteroids titleState.randomSeed)
+                PreGame (initPreGame 1 0 titleState.stars titleState.asteroids titleState.randomSeed)
               else model
 
           _ -> model)
 
      PreGame preGameState ->
        (case msg of
-          Tick timeDelta -> PreGame (tickPreGame (inSeconds timeDelta) preGameState)
-
-          KeyPressed key ->
-            let enter = 13
-            in
-              if key == enter then
-                Game (initGame preGameState.score preGameState.stars preGameState.asteroids preGameState.randomSeed)
-              else model
-
+          Tick timeDelta ->
+            if preGameState.stateTime >= preGameLength then
+              Game (initGame preGameState.sector preGameState.score preGameState.stars preGameState.asteroids preGameState.randomSeed)
+            else
+              PreGame (tickPreGame (inSeconds timeDelta) preGameState)
           _ -> model)
 
      Game gameState ->
-       Game
-         (case msg of
-            Init _ -> gameState
-            Tick timeDelta -> tickGame (inSeconds timeDelta) gameState
+       (case msg of
+          Init _ -> model
+          Tick timeDelta -> Game (tickGame (inSeconds timeDelta) gameState)
 
-            KeyPressed key -> { gameState | keys = KeyStates.pressed key gameState.keys }
-            KeyReleased key -> { gameState | keys = KeyStates.released key gameState.keys }
-         )
+          KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
+          KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys })
 
   , Cmd.none)
 
@@ -139,12 +144,14 @@ tickTitle timeDelta titleState =
     , asteroids = Asteroids.tick timeDelta titleState.asteroids
   }
 
-initPreGame : Int -> List Star -> List Asteroid -> Seed -> PreGameState
-initPreGame score stars asteroids randomSeed =
-  { score = score
+initPreGame : Int -> Int -> List Star -> List Asteroid -> Seed -> PreGameState
+initPreGame sector score stars asteroids randomSeed =
+  { sector = sector
+  , score = score
   , stars = stars
   , asteroids = asteroids
   , randomSeed = randomSeed
+  , stateTime = 0
   }
 
 tickPreGame : Float -> PreGameState -> PreGameState
@@ -152,11 +159,13 @@ tickPreGame timeDelta preGameState =
   { preGameState
     | stars = Stars.tick timeDelta preGameState.stars
     , asteroids = Asteroids.tick timeDelta preGameState.asteroids
+    , stateTime = preGameState.stateTime + timeDelta
   }
 
-initGame : Int -> List Star -> List Asteroid -> Seed -> GameState
-initGame score stars asteroids randomSeed =
-  { score = score
+initGame : Int -> Int -> List Star -> List Asteroid -> Seed -> GameState
+initGame sector score stars asteroids randomSeed =
+  { sector = sector
+  , score = score
   , stars = stars
   , player =
       { position = (0, 0)
@@ -174,6 +183,7 @@ initGame score stars asteroids randomSeed =
       , spaceTapped = False
       }
   , randomSeed = randomSeed
+  , stateTime = 0
   }
 
 tickGame : Float -> GameState -> GameState
@@ -193,6 +203,7 @@ tickGame timeDelta gameState =
       , segmentParticles = SegmentParticles.tick timeDelta gameState.segmentParticles ++ segmentParticles
       , keys = KeyStates.tick gameState.keys
       , randomSeed = randomSeed
+      , stateTime = gameState.stateTime + timeDelta
     }
 
 subscriptions : Model -> Sub Msg
@@ -205,12 +216,7 @@ subscriptions model =
 
            , downs KeyPressed
            ]
-    PreGame _ ->
-      Sub.batch
-           [ diffs Tick
-
-           , downs KeyPressed
-           ]
+    PreGame _ -> diffs Tick
     Game _ ->
       Sub.batch
            [ diffs Tick
@@ -230,7 +236,11 @@ view model =
         [ rect width height |> filled black
         , Stars.draw titleState.stars
         , Asteroids.draw titleState.asteroids
-        , drawTitle
+        , group
+            [ defaultText 40 "elmsteroids" |> moveY 50
+            , defaultText 16 "github.com/yupferris // 2016" |> moveY -30
+            , defaultText 14 "press enter/return to begin" |> moveY -50
+            ]
         ]
         |> Element.toHtml
 
@@ -240,7 +250,16 @@ view model =
         [ rect width height |> filled black
         , Stars.draw preGameState.stars
         , Asteroids.draw preGameState.asteroids
-        -- TODO: Pre-game info
+        , let
+            animAmt = preGameState.stateTime / preGameLength
+            animAmt' = 1 - animAmt
+          in
+            Ship.draw (0, 0) ((animAmt' ^ 3) * 8) |> scale (1 + (animAmt' ^ 2) * 2) |> alpha animAmt
+        , group
+            [ defaultText 26 ("warping to sector " ++ toString preGameState.sector) |> moveY 50
+            , defaultText 18 ("score: " ++ toString preGameState.score) |> moveY -30
+            ]
+            |> alpha (preGameLength - preGameState.stateTime |> min 1 |> max 0)
         ]
         |> Element.toHtml
 
@@ -250,17 +269,14 @@ view model =
         [ rect width height |> filled black
         , Stars.draw gameState.stars
         , Asteroids.draw gameState.asteroids
-        , Player.draw gameState.player
+        , let
+            a =
+              if gameState.stateTime < invincibleLength then
+                cos (gameState.stateTime * 50) * 0.4 + 0.6
+              else 1
+          in Player.draw gameState.player |> alpha a
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
-        , Hud.draw gameState.score
+        , Hud.draw gameState.sector gameState.score
         ]
         |> Element.toHtml
-
-drawTitle : Form
-drawTitle =
-  group
-    [ defaultText 40 "elmsteroids" |> moveY 50
-    , defaultText 16 "github.com/yupferris // 2016" |> moveY -30
-    , defaultText 14 "press enter/return to begin" |> moveY -50
-    ]
