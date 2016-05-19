@@ -93,7 +93,7 @@ segmentParticles initialVelocity segments =
     x::xs ->
       (::) <$> segmentParticle initialVelocity x <*> segmentParticles initialVelocity xs
 
-init : Seed -> (List Asteroid, Seed)
+init : State Seed (List Asteroid)
 init = step (int 2 3) >>= init' 4 5
 
 init' : Int -> Int -> Int -> State Seed (List Asteroid)

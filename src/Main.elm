@@ -8,8 +8,10 @@ import Text exposing (fromString, style, link)
 import Collage exposing (collage, rect, filled, text, moveY)
 import Element
 import Color exposing (..)
+import State exposing (..)
 import DefaultText exposing (..)
 import Bounds exposing (..)
+import Stars exposing (Star)
 import Player exposing (Player)
 import Asteroids exposing (Asteroid)
 import Bullets exposing (Bullet)
@@ -33,12 +35,14 @@ type Model
   | Game GameState
 
 type alias TitleState =
-  { asteroids : List Asteroid
+  { stars : List Star
+  , asteroids : List Asteroid
   , randomSeed : Seed
   }
 
 type alias GameState =
   { score : Int
+  , stars : List Star
   , player : Player
   , asteroids : List Asteroid
   , bullets : List Bullet
@@ -86,26 +90,35 @@ initTitle : Time -> TitleState
 initTitle time =
   let
     ms = inMilliseconds time |> floor
-    (asteroids, randomSeed) = initialSeed ms |> Asteroids.init
+    ((stars, asteroids), randomSeed) =
+      initialSeed ms
+        |> Stars.init >>= \stars -> Asteroids.init >>= \asteroids -> return (stars, asteroids)
 
   in
-    { asteroids = asteroids
+    { stars = stars
+    , asteroids = asteroids
     , randomSeed = randomSeed
     }
 
 -- Time value is always in seconds
 tickTitle : Float -> TitleState -> TitleState
 tickTitle timeDelta titleState =
-  { titleState | asteroids = Asteroids.tick timeDelta titleState.asteroids }
+  { titleState
+    | stars = Stars.tick timeDelta titleState.stars
+    , asteroids = Asteroids.tick timeDelta titleState.asteroids
+  }
 
 initGame : Time -> GameState
 initGame time =
   let
     ms = inMilliseconds time |> floor
-    (asteroids, randomSeed) = initialSeed ms |> Asteroids.init
+    ((stars, asteroids), randomSeed) =
+      initialSeed ms
+        |> Stars.init >>= \stars -> Asteroids.init >>= \asteroids -> return (stars, asteroids)
 
   in
     { score = 0
+    , stars = stars
     , player =
         { position = (0, 0)
         , velocity = (0, 0)
@@ -135,6 +148,7 @@ tickGame timeDelta gameState =
   in
     { gameState
       | score = gameState.score + score
+      , stars = Stars.tick timeDelta gameState.stars
       , player = Player.tick timeDelta gameState.keys gameState.player
       , asteroids = asteroids'
       , bullets = bullets'
@@ -166,6 +180,7 @@ view model =
       collage
         (floor width) (floor height)
         [ rect width height |> filled black
+        , Stars.draw titleState.stars
         , Asteroids.draw titleState.asteroids
         , Title.draw
         ]
@@ -175,6 +190,7 @@ view model =
       collage
         (floor width) (floor height)
         [ rect width height |> filled black
+        , Stars.draw gameState.stars
         , Asteroids.draw gameState.asteroids
         , Player.draw gameState.player
         , Bullets.draw gameState.bullets
