@@ -69,10 +69,17 @@ update msg model =
          _ -> model
 
      Title titleState ->
-       Title
-         (case msg of
-            Tick timeDelta -> tickTitle (inSeconds timeDelta) titleState
-            _ -> titleState)
+       (case msg of
+          Tick timeDelta -> Title (tickTitle (inSeconds timeDelta) titleState)
+
+          KeyPressed key ->
+            let enter = 13
+            in
+              if key == enter then
+                Game (initGame titleState.stars titleState.asteroids titleState.randomSeed)
+              else model
+
+          _ -> model)
 
      Game gameState ->
        Game
@@ -90,15 +97,17 @@ initTitle : Time -> TitleState
 initTitle time =
   let
     ms = inMilliseconds time |> floor
-    ((stars, asteroids), randomSeed) =
-      initialSeed ms
-        |> Stars.init >>= \stars -> Asteroids.init >>= \asteroids -> return (stars, asteroids)
+    ((stars, asteroids), randomSeed) = initialSeed ms |> initStarsAndAsteroids
 
   in
     { stars = stars
     , asteroids = asteroids
     , randomSeed = randomSeed
     }
+
+initStarsAndAsteroids : State Seed (List Star, List Asteroid)
+initStarsAndAsteroids =
+  Stars.init >>= \stars -> Asteroids.init >>= \asteroids -> return (stars, asteroids)
 
 -- Time value is always in seconds
 tickTitle : Float -> TitleState -> TitleState
@@ -108,34 +117,27 @@ tickTitle timeDelta titleState =
     , asteroids = Asteroids.tick timeDelta titleState.asteroids
   }
 
-initGame : Time -> GameState
-initGame time =
-  let
-    ms = inMilliseconds time |> floor
-    ((stars, asteroids), randomSeed) =
-      initialSeed ms
-        |> Stars.init >>= \stars -> Asteroids.init >>= \asteroids -> return (stars, asteroids)
-
-  in
-    { score = 0
-    , stars = stars
-    , player =
-        { position = (0, 0)
-        , velocity = (0, 0)
-        , rotation = 0
-        }
-    , asteroids = asteroids
-    , bullets = []
-    , segmentParticles = []
-    , keys =
-        { left = False
-        , right = False
-        , up = False
-        , down = False
-        , spaceTapped = False
-        }
-    , randomSeed = randomSeed
-    }
+initGame : List Star -> List Asteroid -> Seed -> GameState
+initGame stars asteroids randomSeed =
+  { score = 0
+  , stars = stars
+  , player =
+      { position = (0, 0)
+      , velocity = (0, 0)
+      , rotation = 0
+      }
+  , asteroids = asteroids
+  , bullets = []
+  , segmentParticles = []
+  , keys =
+      { left = False
+      , right = False
+      , up = False
+      , down = False
+      , spaceTapped = False
+      }
+  , randomSeed = randomSeed
+  }
 
 -- Time value is always in seconds
 tickGame : Float -> GameState -> GameState
@@ -162,14 +164,18 @@ subscriptions model =
   case model of
     Uninitialized -> times Init
     Title _ ->
-      diffs Tick
+      Sub.batch
+           [ diffs Tick
+
+           , downs KeyPressed
+           ]
     Game _ ->
       Sub.batch
-        [ diffs Tick
+           [ diffs Tick
 
-        , downs KeyPressed
-        , ups KeyReleased
-        ]
+           , downs KeyPressed
+           , ups KeyReleased
+           ]
 
 view : Model -> Html Msg
 view model =

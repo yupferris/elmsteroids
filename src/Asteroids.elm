@@ -9,7 +9,7 @@ import State exposing (..)
 import Vector exposing (..)
 import Segment exposing (..)
 import Triangle exposing (..)
-import Bounds
+import Bounds exposing (..)
 import SegmentParticles exposing (SegmentParticle, segmentParticle)
 
 type alias Asteroid =
@@ -76,15 +76,18 @@ split asteroid =
     let size = asteroid.size - 1
     in
       if size > 0 then
-        let
-          (left, bottom) = asteroid.position
-          (right, top) = asteroid.position
-          initAsteroid' = initAsteroid left right bottom top Nothing size size
-        in
-          initAsteroid' >>= \a ->
-            initAsteroid' >>= \b ->
-              return ([a, b], particles)
+        step (int 1 3) >>= \count ->
+          split' count asteroid.position size >>= \asteroids ->
+            return (asteroids, particles)
       else return ([], particles)
+
+split' : Int -> Vector -> Int -> State Seed (List Asteroid)
+split' count position size =
+  if count == 0 then return []
+  else
+    (::)
+      <$> initAsteroid (Just position) size size
+      <*> split' (count - 1) position size
 
 segmentParticles : Vector -> List Segment -> State Seed (List SegmentParticle)
 segmentParticles initialVelocity segments =
@@ -101,12 +104,11 @@ init' minSize maxSize count =
   if count == 0 then return []
   else
     (::)
-      <$> initAsteroid Bounds.left Bounds.right Bounds.bottom Bounds.top (Just Bounds.safeZoneSize) minSize maxSize
+      <$> initAsteroid Nothing minSize maxSize
       <*> init' minSize maxSize (count - 1)
 
--- TODO: Consider proper bounds type
-initAsteroid : Float -> Float -> Float -> Float -> Maybe Float -> Int -> Int -> State Seed Asteroid
-initAsteroid left right bottom top safeZoneSize minSize maxSize =
+initAsteroid : Maybe Vector -> Int -> Int -> State Seed Asteroid
+initAsteroid spawnPos minSize maxSize =
   let
     angle = float 0 (pi * 2) |> step
     radiusGen size =
@@ -116,40 +118,38 @@ initAsteroid left right bottom top safeZoneSize minSize maxSize =
         maxRadius = idealRadius * 1.05
       in float minRadius maxRadius
   in
-    step (float left right) >>= \x ->
-      step (float bottom top) >>= \y ->
-        step (int minSize maxSize) >>= \size ->
-          angle >>= \velDirection ->
-            step (float 40 (100 / toFloat (size ^ 4))) >>= \velMagnitude ->
-              angle >>= \rotation ->
-                step (float -0.5 0.5) >>= \rotationVelocity ->
-                  step (radiusGen size) >>= \radius ->
-                    let
-                      minRadius = radius * 0.8
-                      maxRadius = radius * 1.2
-
-                      position =
-                        let
-                          p = (x, y)
-                        in
-                          case safeZoneSize of
-                            Just s ->
-                                 let safeZoneSize' = s + radius
-                                 in
-                                   if length p < safeZoneSize' then
-                                     p |> normalize |> mul safeZoneSize'
-                                   else p
-                            _ -> p
-                    in
-                      initPoints minRadius maxRadius >>= \points ->
-                        return
-                          { position = position
-                          , velocity = rotate velDirection (0, velMagnitude)
-                          , rotation = rotation
-                          , rotationVelocity = rotationVelocity
-                          , size = size
-                          , points = points
-                          }
+    step (int minSize maxSize) >>= \size ->
+      angle >>= \velDirection ->
+        step (float 40 (100 / toFloat (size ^ 4))) >>= \velMagnitude ->
+          angle >>= \rotation ->
+            step (float -0.5 0.5) >>= \rotationVelocity ->
+              step (radiusGen size) >>= \radius ->
+                (case spawnPos of
+                   Just pos -> return pos
+                   _ ->
+                     step (float left right) >>= \x ->
+                       step (float bottom top) >>= \y ->
+                         let
+                           p = (x, y)
+                           safeZoneSize' = safeZoneSize + radius
+                         in
+                           return
+                             (if length p < safeZoneSize' then
+                                p |> normalize |> mul safeZoneSize'
+                              else p)) >>= \position ->
+                  let
+                    minRadius = radius * 0.8
+                    maxRadius = radius * 1.2
+                  in
+                    initPoints minRadius maxRadius >>= \points ->
+                      return
+                        { position = position
+                        , velocity = rotate velDirection (0, velMagnitude)
+                        , rotation = rotation
+                        , rotationVelocity = rotationVelocity
+                        , size = size
+                        , points = points
+                        }
 
 initPoints : Float -> Float -> State Seed (List Vector)
 initPoints minRadius maxRadius =
