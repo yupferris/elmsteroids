@@ -29,7 +29,13 @@ main =
 
 type Model
   = Uninitialized
+  | Title TitleState
   | Game GameState
+
+type alias TitleState =
+  { asteroids : List Asteroid
+  , randomSeed : Seed
+  }
 
 type alias GameState =
   { score : Int
@@ -55,8 +61,14 @@ update msg model =
   (case model of
      Uninitialized ->
        case msg of
-         Init time -> Game (initGame time)
+         Init time -> Title (initTitle time)--Game (initGame time)
          _ -> model
+
+     Title titleState ->
+       Title
+         (case msg of
+            Tick timeDelta -> tickTitle (inSeconds timeDelta) titleState
+            _ -> titleState)
 
      Game gameState ->
        Game
@@ -69,6 +81,22 @@ update msg model =
          )
 
   , Cmd.none)
+
+initTitle : Time -> TitleState
+initTitle time =
+  let
+    ms = inMilliseconds time |> floor
+    (asteroids, randomSeed) = initialSeed ms |> Asteroids.init
+
+  in
+    { asteroids = asteroids
+    , randomSeed = randomSeed
+    }
+
+-- Time value is always in seconds
+tickTitle : Float -> TitleState -> TitleState
+tickTitle timeDelta titleState =
+  { titleState | asteroids = Asteroids.tick timeDelta titleState.asteroids }
 
 initGame : Time -> GameState
 initGame time =
@@ -119,6 +147,8 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
   case model of
     Uninitialized -> times Init
+    Title _ ->
+      diffs Tick
     Game _ ->
       Sub.batch
         [ diffs Tick
@@ -131,6 +161,16 @@ view : Model -> Html Msg
 view model =
   case model of
     Uninitialized -> Html.text "Initializing..."
+
+    Title titleState ->
+      collage
+        (floor width) (floor height)
+        [ rect width height |> filled black
+        , Asteroids.draw titleState.asteroids
+        , Title.draw
+        ]
+        |> Element.toHtml
+
     Game gameState ->
       collage
         (floor width) (floor height)
@@ -140,6 +180,5 @@ view model =
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
         , Hud.draw gameState.score
-        --, Title.draw
         ]
         |> Element.toHtml
