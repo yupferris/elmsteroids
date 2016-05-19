@@ -5,7 +5,7 @@ import Time exposing (..)
 import AnimationFrame exposing (..)
 import Keyboard exposing (..)
 import Text exposing (fromString, style, link)
-import Collage exposing (collage, rect, filled, text, moveY)
+import Collage exposing (Form, collage, group, rect, filled, text, moveY)
 import Element
 import Color exposing (..)
 import State exposing (..)
@@ -19,7 +19,6 @@ import SegmentParticles exposing (SegmentParticle)
 import KeyStates exposing (KeyStates)
 import Collisions exposing (..)
 import Hud
-import Title
 
 main =
   Html.App.program
@@ -186,7 +185,7 @@ view model =
         [ rect width height |> filled black
         , Stars.draw titleState.stars
         , Asteroids.draw titleState.asteroids
-        , Title.draw
+        , drawTitle
         ]
         |> Element.toHtml
 
@@ -202,3 +201,11 @@ view model =
         , Hud.draw gameState.score
         ]
         |> Element.toHtml
+
+drawTitle : Form
+drawTitle =
+  group
+    [ defaultText 40 "elmsteroids" |> moveY 50
+    , defaultText 16 "github.com/yupferris // 2016" |> moveY -30
+    , defaultText 14 "press enter/return to begin" |> moveY -50
+    ]
