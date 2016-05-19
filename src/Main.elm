@@ -31,10 +31,18 @@ main =
 type Model
   = Uninitialized
   | Title TitleState
+  | PreGame PreGameState
   | Game GameState
 
 type alias TitleState =
   { stars : List Star
+  , asteroids : List Asteroid
+  , randomSeed : Seed
+  }
+
+type alias PreGameState =
+  { score : Int
+  , stars : List Star
   , asteroids : List Asteroid
   , randomSeed : Seed
   }
@@ -75,7 +83,20 @@ update msg model =
             let enter = 13
             in
               if key == enter then
-                Game (initGame titleState.stars titleState.asteroids titleState.randomSeed)
+                PreGame (initPreGame 0 titleState.stars titleState.asteroids titleState.randomSeed)
+              else model
+
+          _ -> model)
+
+     PreGame preGameState ->
+       (case msg of
+          Tick timeDelta -> PreGame (tickPreGame (inSeconds timeDelta) preGameState)
+
+          KeyPressed key ->
+            let enter = 13
+            in
+              if key == enter then
+                Game (initGame preGameState.score preGameState.stars preGameState.asteroids preGameState.randomSeed)
               else model
 
           _ -> model)
@@ -96,7 +117,8 @@ initTitle : Time -> TitleState
 initTitle time =
   let
     ms = inMilliseconds time |> floor
-    ((stars, asteroids), randomSeed) = initialSeed ms |> initStarsAndAsteroids
+    ((stars, asteroids), randomSeed) =
+      initialSeed ms |> initStarsAndAsteroids
 
   in
     { stars = stars
@@ -106,7 +128,9 @@ initTitle time =
 
 initStarsAndAsteroids : State Seed (List Star, List Asteroid)
 initStarsAndAsteroids =
-  Stars.init >>= \stars -> Asteroids.init >>= \asteroids -> return (stars, asteroids)
+  Stars.init >>= \stars ->
+    Asteroids.init >>= \asteroids ->
+      return (stars, asteroids)
 
 tickTitle : Float -> TitleState -> TitleState
 tickTitle timeDelta titleState =
@@ -115,9 +139,24 @@ tickTitle timeDelta titleState =
     , asteroids = Asteroids.tick timeDelta titleState.asteroids
   }
 
-initGame : List Star -> List Asteroid -> Seed -> GameState
-initGame stars asteroids randomSeed =
-  { score = 0
+initPreGame : Int -> List Star -> List Asteroid -> Seed -> PreGameState
+initPreGame score stars asteroids randomSeed =
+  { score = score
+  , stars = stars
+  , asteroids = asteroids
+  , randomSeed = randomSeed
+  }
+
+tickPreGame : Float -> PreGameState -> PreGameState
+tickPreGame timeDelta preGameState =
+  { preGameState
+    | stars = Stars.tick timeDelta preGameState.stars
+    , asteroids = Asteroids.tick timeDelta preGameState.asteroids
+  }
+
+initGame : Int -> List Star -> List Asteroid -> Seed -> GameState
+initGame score stars asteroids randomSeed =
+  { score = score
   , stars = stars
   , player =
       { position = (0, 0)
@@ -166,6 +205,12 @@ subscriptions model =
 
            , downs KeyPressed
            ]
+    PreGame _ ->
+      Sub.batch
+           [ diffs Tick
+
+           , downs KeyPressed
+           ]
     Game _ ->
       Sub.batch
            [ diffs Tick
@@ -186,6 +231,16 @@ view model =
         , Stars.draw titleState.stars
         , Asteroids.draw titleState.asteroids
         , drawTitle
+        ]
+        |> Element.toHtml
+
+    PreGame preGameState ->
+      collage
+        (floor width) (floor height)
+        [ rect width height |> filled black
+        , Stars.draw preGameState.stars
+        , Asteroids.draw preGameState.asteroids
+        -- TODO: Pre-game info
         ]
         |> Element.toHtml
 
