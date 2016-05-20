@@ -76,18 +76,17 @@ split asteroid =
     let size = asteroid.size - 1
     in
       if size > 0 then
-        step (int 1 3) >>= \count ->
-          split' count asteroid.position size >>= \asteroids ->
-            return (asteroids, particles)
+        step (int 1 3) >>= split' asteroid.position size >>= \asteroids ->
+          return (asteroids, particles)
       else return ([], particles)
 
-split' : Int -> Vector -> Int -> State Seed (List Asteroid)
-split' count position size =
+split' : Vector -> Int -> Int -> State Seed (List Asteroid)
+split' position size count =
   if count == 0 then return []
   else
     (::)
       <$> initAsteroid (Just position) size size
-      <*> split' (count - 1) position size
+      <*> split' position size (count - 1)
 
 init : State Seed (List Asteroid)
 init = step (int 2 3) >>= init' 4 5
@@ -147,10 +146,10 @@ initAsteroid spawnPos minSize maxSize =
 initPoints : Float -> Float -> State Seed (List Vector)
 initPoints minRadius maxRadius =
   step (int 10 16) >>= \count ->
-    initPoints' count (pi * 2.0 / (toFloat count)) minRadius maxRadius
+    initPoints' (pi * 2.0 / (toFloat count)) minRadius maxRadius count
 
-initPoints' : Int -> Float -> Float -> Float -> State Seed (List Vector)
-initPoints' count segAngleDelta minRadius maxRadius =
+initPoints' : Float -> Float -> Float -> Int -> State Seed (List Vector)
+initPoints' segAngleDelta minRadius maxRadius count =
   if count == 0 then return []
   else
     let angleOffset = toFloat count * segAngleDelta
@@ -163,7 +162,7 @@ initPoints' count segAngleDelta minRadius maxRadius =
             y = sin angle' * radius'
             point = (x, y)
           in
-            initPoints' (count - 1) segAngleDelta minRadius maxRadius >>= \acc ->
+            initPoints' segAngleDelta minRadius maxRadius (count - 1) >>= \acc ->
               return (point :: acc)
 
 tick : Float -> List Asteroid -> List Asteroid
