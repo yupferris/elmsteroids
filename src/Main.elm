@@ -73,7 +73,7 @@ type alias GameState =
 
 -- TODO: Better name?
 invincibleLength : Float
-invincibleLength = 5
+invincibleLength = 3
 
 init : (Model, Cmd Msg)
 init = (Uninitialized, Cmd.none)
@@ -232,7 +232,7 @@ tickGame timeDelta gameState =
     bullets = Bullets.tick timeDelta gameState.bullets
     (bullets', fireTime) =
       if gameState.keys.space && gameState.fireTime >= 0 then
-        (Bullets.fire gameState.player bullets, -0.3)
+        (Bullets.fire gameState.player bullets, -0.5)
       else (bullets, gameState.fireTime + timeDelta)
 
     ((asteroids', bullets'', segmentParticles, score, hitPlayer), randomSeed) =

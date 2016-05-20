@@ -113,7 +113,7 @@ initAsteroid spawnPos minSize maxSize =
   in
     step (int minSize maxSize) >>= \size ->
       angle >>= \velDirection ->
-        step (float 40 (100 / toFloat (size ^ 4))) >>= \velMagnitude ->
+        step (float 60 (180 / toFloat (size ^ 2))) >>= \velMagnitude ->
           angle >>= \rotation ->
             step (float -0.5 0.5) >>= \rotationVelocity ->
               step (radiusGen size) >>= \radius ->

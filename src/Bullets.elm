@@ -19,8 +19,8 @@ fire player bullets =
   { position = Ship.front player.position player.rotation
   , velocity =
     player.velocity
-  |> add (rotate player.rotation (0, 60))
-  , timeUntilDeath = 5.0
+  |> add (rotate player.rotation (0, 80))
+  , timeUntilDeath = 3.0
   } :: bullets
 
 tick : Float -> List Bullet -> List Bullet
