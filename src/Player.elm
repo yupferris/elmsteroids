@@ -2,7 +2,6 @@ module Player exposing (Player, tick, draw)
 
 import Collage exposing (Form)
 import Color exposing (..)
-import DrawWrapped exposing (..)
 import Vector exposing (..)
 import Bounds exposing (..)
 import Ship
@@ -45,5 +44,5 @@ tick timeDelta keys player =
 
 draw : Player -> Form
 draw player =
+  -- TODO: Wrapping
   Ship.draw player.position player.rotation
-  |> drawWrapped

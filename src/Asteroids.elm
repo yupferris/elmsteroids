@@ -3,11 +3,10 @@ module Asteroids exposing (Asteroid, liesInside, triangles, segments, split, ini
 import List exposing (map, any)
 import Collage exposing (Form, group, polygon, filled, outlined, defaultLine)
 import Color exposing (..)
-import DrawWrapped exposing (..)
 import Random exposing (Seed, int, float, step)
 import State exposing (..)
 import Vector exposing (..)
-import Segment exposing (..)
+import Segment exposing (Segment)
 import Triangle exposing (Triangle)
 import Bounds exposing (..)
 import SegmentParticles exposing (SegmentParticle, segmentParticles)
@@ -190,8 +189,8 @@ drawAsteroid asteroid =
         |> absolutePoints
         |> polygon
   in
+    -- TODO: Wrapping
     group
       [ shape |> filled black
       , shape |> outlined { defaultLine | color = white }
       ]
-    |> drawWrapped
