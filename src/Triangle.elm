@@ -1,12 +1,20 @@
-module Triangle exposing (Triangle, liesInside)
+module Triangle exposing (Triangle, segments, liesInside)
 
 import Vector exposing (..)
+import Segment exposing (..)
 
 type alias Triangle =
   { a : Vector
   , b : Vector
   , c : Vector
   }
+
+segments : Triangle -> List Segment
+segments triangle =
+  [ { a = triangle.a, b = triangle.b }
+  , { a = triangle.b, b = triangle.c }
+  , { a = triangle.c, b = triangle.a }
+  ]
 
 liesInside : Vector -> Triangle -> Bool
 liesInside point triangle =

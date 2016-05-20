@@ -1,4 +1,4 @@
-module Vector exposing (Vector, length, normalize, add, sub, mul, div, dot, rotate, wrap)
+module Vector exposing (Vector, length, normalize, add, sub, mul, mulS, div, divS, dot, cross, rotate, wrap)
 
 type alias Vector = (Float, Float)
 
@@ -9,7 +9,7 @@ length vector =
 
 normalize : Vector -> Vector
 normalize vector =
-  div (length vector) vector
+  divS (length vector) vector
 
 add : Vector -> Vector -> Vector
 add x y =
@@ -25,13 +25,27 @@ sub x y =
     (yx, yy) = y
   in (xx - yx, xy - yy)
 
-mul : Float -> Vector -> Vector
-mul scalar vector =
+mul : Vector -> Vector -> Vector
+mul x y =
+  let
+    (xx, xy) = x
+    (yx, yy) = y
+  in (xx * yx, xy * yy)
+
+mulS : Float -> Vector -> Vector
+mulS scalar vector =
   let (x, y) = vector
   in (x * scalar, y * scalar)
 
-div : Float -> Vector -> Vector
-div scalar vector =
+div : Vector -> Vector -> Vector
+div x y =
+  let
+    (xx, xy) = x
+    (yx, yy) = y
+  in (xx / yx, xy / yy)
+
+divS : Float -> Vector -> Vector
+divS scalar vector =
   let (x, y) = vector
   in (x / scalar, y / scalar)
 
@@ -41,6 +55,13 @@ dot x y =
     (xx, xy) = x
     (yx, yy) = y
   in xx * yx + xy * yy
+
+cross : Vector -> Vector -> Float
+cross x y =
+  let
+    (xx, xy) = x
+    (yx, yy) = y
+  in xx * yy - xy * yx
 
 rotate : Float -> Vector -> Vector
 rotate angle vector =

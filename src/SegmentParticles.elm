@@ -1,4 +1,4 @@
-module SegmentParticles exposing (SegmentParticle, segmentParticle, tick, draw)
+module SegmentParticles exposing (SegmentParticle, segmentParticles, tick, draw)
 
 import List exposing (map, filterMap)
 import Collage exposing (Form, group, path, traced, defaultLine, move, alpha)
@@ -18,6 +18,13 @@ type alias SegmentParticle =
   , segment : Segment
   , timeUntilDeath : Float
   }
+
+segmentParticles : Vector -> List Segment -> State Seed (List SegmentParticle)
+segmentParticles initialVelocity segments =
+  case segments of
+    [] -> return []
+    x::xs ->
+      (::) <$> segmentParticle initialVelocity x <*> segmentParticles initialVelocity xs
 
 segmentParticle : Vector -> Segment -> State Seed SegmentParticle
 segmentParticle initialVelocity segment =
@@ -52,7 +59,7 @@ tick timeDelta =
 moveParticle : Float -> SegmentParticle -> SegmentParticle
 moveParticle timeDelta particle =
   { particle | position =
-      add particle.position (mul timeDelta particle.velocity)
+      add particle.position (mulS timeDelta particle.velocity)
       |> wrap bounds}
 
 rotateParticle : Float -> SegmentParticle -> SegmentParticle

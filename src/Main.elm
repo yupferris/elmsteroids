@@ -210,7 +210,7 @@ tickGame timeDelta gameState =
 
     ((asteroids', bullets', segmentParticles, score, hitPlayer), randomSeed) =
       collide
-        (if gameState.stateTime < invincibleLength then Just player else Nothing)
+        (if gameState.stateTime < invincibleLength then Nothing else Just player)
         asteroids
         bullets
         gameState.randomSeed

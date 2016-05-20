@@ -35,7 +35,7 @@ fireBullet keys player bullets =
 moveBullet : Float -> Bullet -> Bullet
 moveBullet timeDelta bullet =
   { bullet | position =
-      add bullet.position (mul timeDelta bullet.velocity)
+      add bullet.position (mulS timeDelta bullet.velocity)
       |> wrap bounds }
 
 killBullet : Float -> Bullet -> Maybe Bullet

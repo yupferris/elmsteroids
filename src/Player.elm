@@ -18,7 +18,7 @@ tick : Float -> KeyStates -> Player -> Player
 tick timeDelta keys player =
   let
     position =
-      add player.position (mul timeDelta player.velocity)
+      add player.position (mulS timeDelta player.velocity)
       |> wrap bounds
 
     accel = 57.0

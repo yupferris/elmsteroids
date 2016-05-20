@@ -1,4 +1,4 @@
-module Asteroids exposing (Asteroid, liesInside, split, init, tick, draw)
+module Asteroids exposing (Asteroid, liesInside, triangles, segments, split, init, tick, draw)
 
 import List exposing (map, any)
 import Collage exposing (Form, group, polygon, filled, outlined, defaultLine)
@@ -8,9 +8,9 @@ import Random exposing (Seed, int, float, step)
 import State exposing (..)
 import Vector exposing (..)
 import Segment exposing (..)
-import Triangle exposing (..)
+import Triangle exposing (Triangle)
 import Bounds exposing (..)
-import SegmentParticles exposing (SegmentParticle, segmentParticle)
+import SegmentParticles exposing (SegmentParticle, segmentParticles)
 
 type alias Asteroid =
   { position : Vector
@@ -89,13 +89,6 @@ split' count position size =
       <$> initAsteroid (Just position) size size
       <*> split' (count - 1) position size
 
-segmentParticles : Vector -> List Segment -> State Seed (List SegmentParticle)
-segmentParticles initialVelocity segments =
-  case segments of
-    [] -> return []
-    x::xs ->
-      (::) <$> segmentParticle initialVelocity x <*> segmentParticles initialVelocity xs
-
 init : State Seed (List Asteroid)
 init = step (int 2 3) >>= init' 4 5
 
@@ -135,7 +128,7 @@ initAsteroid spawnPos minSize maxSize =
                          in
                            return
                              (if length p < safeZoneSize' then
-                                p |> normalize |> mul safeZoneSize'
+                                p |> normalize |> mulS safeZoneSize'
                               else p)) >>= \position ->
                   let
                     minRadius = radius * 0.8
@@ -179,7 +172,7 @@ tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)
 moveAsteroid : Float -> Asteroid -> Asteroid
 moveAsteroid timeDelta asteroid =
   { asteroid | position =
-      add asteroid.position (mul timeDelta asteroid.velocity)
+      add asteroid.position (mulS timeDelta asteroid.velocity)
       |> wrap Bounds.bounds }
 
 rotateAsteroid : Float -> Asteroid -> Asteroid
