@@ -316,7 +316,7 @@ view model =
             [ defaultText 26 ("warping to sector " ++ toString preGameState.sector) |> moveY 50
             , defaultText 18 ("score: " ++ toString preGameState.score) |> moveY -30
             ]
-            |> alpha (preGameLength - preGameState.stateTime |> min 1 |> max 0)
+            |> alpha (min (preGameState.stateTime) (preGameLength - preGameState.stateTime |> min 1 |> max 0))
         ]
         |> Element.toHtml
 
