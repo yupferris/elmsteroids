@@ -34,11 +34,13 @@ type Model
   | Title TitleState
   | PreGame PreGameState
   | Game GameState
+  | GameOver GameOverState
 
 type alias TitleState =
   { stars : List Star
   , asteroids : List Asteroid
   , randomSeed : Seed
+  , stateTime : Float
   }
 
 type alias PreGameState =
@@ -75,6 +77,17 @@ type alias GameState =
 invincibleLength : Float
 invincibleLength = 3
 
+type alias GameOverState =
+  { sector : Int
+  , score : Int
+  , stars : List Star
+  , asteroids : List Asteroid
+  , bullets : List Bullet
+  , segmentParticles : List SegmentParticle
+  , randomSeed : Seed
+  , stateTime : Float
+  }
+
 init : (Model, Cmd Msg)
 init = (Uninitialized, Cmd.none)
 
@@ -89,48 +102,60 @@ update msg model =
   (case model of
      Uninitialized ->
        case msg of
-         Init time -> Title (initTitle time)
+         Init time ->
+           let randomSeed = inMilliseconds time |> floor |> initialSeed
+           in Title (initTitle randomSeed)
          _ -> model
 
      Title titleState ->
-       (case msg of
-          Tick timeDelta -> Title (tickTitle (inSeconds timeDelta) titleState)
+       case msg of
+         Tick timeDelta -> Title (tickTitle (inSeconds timeDelta) titleState)
 
-          KeyPressed key ->
-            let enter = 13
-            in
-              if key == enter then
-                PreGame (initPreGame 1 0 3 titleState.stars titleState.asteroids [] [] titleState.randomSeed)
-              else model
+         KeyPressed key ->
+           let enter = 13
+           in
+             if key == enter then
+               PreGame (initPreGame 1 0 3 titleState.stars titleState.asteroids [] [] titleState.randomSeed)
+             else model
 
-          _ -> model)
+         _ -> model
 
      PreGame preGameState ->
-       (case msg of
-          Tick timeDelta -> tickPreGame (inSeconds timeDelta) preGameState
-          _ -> model)
+       case msg of
+         Tick timeDelta -> tickPreGame (inSeconds timeDelta) preGameState
+         _ -> model
 
      Game gameState ->
-       (case msg of
-          Init _ -> model
-          Tick timeDelta -> tickGame (inSeconds timeDelta) gameState
+       case msg of
+         Init _ -> model
+         Tick timeDelta -> tickGame (inSeconds timeDelta) gameState
 
-          KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
-          KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys })
+         KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
+         KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys }
+
+     GameOver gameOverState ->
+       case msg of
+         Tick timeDelta -> tickGameOver (inSeconds timeDelta) gameOverState
+
+         KeyPressed key ->
+           let enter = 13
+           in
+             if key == enter then
+               Title (initTitle gameOverState.randomSeed)
+             else model
+
+         _ -> model
 
   , Cmd.none)
 
-initTitle : Time -> TitleState
-initTitle time =
-  let
-    ms = inMilliseconds time |> floor
-    ((stars, asteroids), randomSeed) =
-      initialSeed ms |> initStarsAndAsteroids
-
+initTitle : Seed -> TitleState
+initTitle randomSeed =
+  let ((stars, asteroids), randomSeed) = initStarsAndAsteroids randomSeed
   in
     { stars = stars
     , asteroids = asteroids
     , randomSeed = randomSeed
+    , stateTime = 0
     }
 
 initStarsAndAsteroids : State Seed (List Star, List Asteroid)
@@ -144,6 +169,7 @@ tickTitle timeDelta titleState =
   { titleState
     | stars = Stars.tick timeDelta titleState.stars
     , asteroids = Asteroids.tick timeDelta titleState.asteroids
+    , stateTime = titleState.stateTime + timeDelta
   }
 
 initPreGame : Int -> Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> PreGameState
@@ -166,7 +192,7 @@ tickPreGame timeDelta preGameState =
     asteroids = Asteroids.tick timeDelta preGameState.asteroids
     bullets = Bullets.tick timeDelta preGameState.bullets
 
-    ((asteroids', bullets', segmentParticles, _, hitPlayer), randomSeed) =
+    ((asteroids', bullets', segmentParticles, _, _), randomSeed) =
       collide
         Nothing
         asteroids
@@ -246,16 +272,29 @@ tickGame timeDelta gameState =
     segmentParticles' = SegmentParticles.tick timeDelta gameState.segmentParticles ++ segmentParticles
   in
     if hitPlayer then
-      PreGame
-        (initPreGame
-           gameState.sector
-           score'
-           (gameState.lives - 1) -- TODO: Game over
-           stars
-           asteroids'
-           bullets''
-           segmentParticles'
-           randomSeed)
+      let lives = gameState.lives - 1
+      in
+        if lives > 0 then
+          PreGame
+            (initPreGame
+               gameState.sector
+               score'
+               lives
+               stars
+               asteroids'
+               bullets''
+               segmentParticles'
+               randomSeed)
+        else
+          GameOver
+            (initGameOver
+               gameState.sector
+               score'
+               stars
+               asteroids'
+               bullets''
+               segmentParticles'
+               randomSeed)
     else
       case asteroids' of
         [] ->
@@ -287,18 +326,49 @@ tickGame timeDelta gameState =
               , stateTime = gameState.stateTime + timeDelta
             }
 
+initGameOver : Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> GameOverState
+initGameOver sector score stars asteroids bullets segmentParticles randomSeed =
+  { sector = sector
+  , score = score
+  , stars = stars
+  , asteroids = asteroids
+  , bullets = bullets
+  , segmentParticles = segmentParticles
+  , randomSeed = randomSeed
+  , stateTime = 0
+  }
+
+tickGameOver : Float -> GameOverState -> Model
+tickGameOver timeDelta gameOverState =
+  let
+    stars = Stars.tick timeDelta gameOverState.stars
+    asteroids = Asteroids.tick timeDelta gameOverState.asteroids
+    bullets = Bullets.tick timeDelta gameOverState.bullets
+
+    ((asteroids', bullets', segmentParticles, _, _), randomSeed) =
+      collide
+        Nothing
+        asteroids
+        bullets
+        gameOverState.randomSeed
+
+    segmentParticles' = SegmentParticles.tick timeDelta gameOverState.segmentParticles ++ segmentParticles
+  in
+    GameOver
+      { gameOverState
+        | stars = stars
+        , asteroids = asteroids'
+        , bullets = bullets'
+        , segmentParticles = segmentParticles'
+        , randomSeed = randomSeed
+        , stateTime = gameOverState.stateTime + timeDelta
+      }
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
   case model of
     Uninitialized -> times Init
-    Title _ ->
-      Sub.batch
-           [ diffs Tick
-
-           , downs KeyPressed
-           ]
-    PreGame _ -> diffs Tick
-    Game _ ->
+    _ ->
       Sub.batch
            [ diffs Tick
 
@@ -322,6 +392,7 @@ view model =
             , defaultText 16 "github.com/yupferris // 2016" |> moveY -30
             , defaultText 14 "press enter/return to begin" |> moveY -50
             ]
+            |> alpha (min titleState.stateTime 1)
         ]
         |> Element.toHtml
 
@@ -362,5 +433,21 @@ view model =
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
         , Hud.draw gameState.sector gameState.score gameState.lives |> alpha (min gameState.stateTime 1)
+        ]
+        |> Element.toHtml
+
+    GameOver gameOverState ->
+      collage
+        (floor width) (floor height)
+        [ rect width height |> filled black
+        , Stars.draw gameOverState.stars
+        , Asteroids.draw gameOverState.asteroids
+        , Bullets.draw gameOverState.bullets
+        , SegmentParticles.draw gameOverState.segmentParticles
+        , group
+            [ defaultText 36 "GAME OVER" |> moveY 30
+            , defaultText 18 ("sector " ++ toString gameOverState.sector ++ " // score: " ++ toString gameOverState.score) |> moveY -30
+            ]
+            |> alpha (min gameOverState.stateTime 1)
         ]
         |> Element.toHtml
