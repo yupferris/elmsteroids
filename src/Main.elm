@@ -372,10 +372,10 @@ tickPostGame timeDelta postGameState =
     segmentParticles = SegmentParticles.tick timeDelta postGameState.segmentParticles
   in
     if postGameState.stateTime >= postGameLength then
-      PreGame
-        (let ((stars', asteroids), randomSeed) = initStarsAndAsteroids postGameState.randomSeed
-         in
-           initPreGame
+      let ((stars', asteroids), randomSeed) = initStarsAndAsteroids postGameState.randomSeed
+      in
+        PreGame
+          (initPreGame
              (postGameState.sector + 1)
              postGameState.score
              postGameState.lives
@@ -446,92 +446,86 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-  case model of
-    Uninitialized -> Html.text "Initializing..."
+  let
+    scene =
+      case model of
+        Uninitialized -> group []
 
-    Title titleState ->
-      collage
-        (floor width) (floor height)
-        [ rect width height |> filled black
-        , Stars.draw titleState.stars
-        , Asteroids.draw titleState.asteroids
-        , group
-            [ defaultText 40 "elmsteroids" |> moveY 50
-            , defaultText 16 "github.com/yupferris // 2016" |> moveY -30
-            , defaultText 14 "press enter/return to begin" |> moveY -50
+        Title titleState ->
+          group
+            [ Stars.draw titleState.stars
+            , Asteroids.draw titleState.asteroids
+            , group
+                [ defaultText 40 "elmsteroids" |> moveY 50
+                , defaultText 16 "github.com/yupferris // 2016" |> moveY -30
+                , defaultText 14 "press enter/return to begin" |> moveY -50
+                ]
+                |> alpha (min titleState.stateTime 1)
             ]
-            |> alpha (min titleState.stateTime 1)
-        ]
-        |> Element.toHtml
 
-    PreGame preGameState ->
-      let
-        animAmt = preGameState.stateTime / preGameLength
-        animAmt' = 1 - animAmt
-      in
-        collage
-          (floor width) (floor height)
-          [ rect width height |> filled black
-          , Stars.draw preGameState.stars
-          , Asteroids.draw preGameState.asteroids
-          , Ship.draw (0, 0) ((animAmt' ^ 3) * 8) |> scale (1 + (animAmt' ^ 2) * 2) |> alpha animAmt
-          , Bullets.draw preGameState.bullets
-          , SegmentParticles.draw preGameState.segmentParticles
-          , group
-              [ defaultText 26 ("warping to sector " ++ toString preGameState.sector) |> moveY 50
-              , defaultText 18 ("score: " ++ toString preGameState.score ++ " // " ++ Hud.livesText preGameState.lives) |> moveY -30
+        PreGame preGameState ->
+          let
+            animAmt = preGameState.stateTime / preGameLength
+            animAmt' = 1 - animAmt
+          in
+            group
+              [ Stars.draw preGameState.stars
+              , Asteroids.draw preGameState.asteroids
+              , Ship.draw (0, 0) ((animAmt' ^ 3) * 8) |> scale (1 + (animAmt' ^ 2) * 2) |> alpha animAmt
+              , Bullets.draw preGameState.bullets
+              , SegmentParticles.draw preGameState.segmentParticles
+              , group
+                  [ defaultText 26 ("warping to sector " ++ toString preGameState.sector) |> moveY 50
+                  , defaultText 18 ("score: " ++ toString preGameState.score ++ " // " ++ Hud.livesText preGameState.lives) |> moveY -30
+                  ]
+                  |> alpha (min preGameState.stateTime (preGameLength - preGameState.stateTime |> min 1 |> max 0))
+                  |> scale (1 + (animAmt' * 0.2))
               ]
-              |> alpha (min preGameState.stateTime (preGameLength - preGameState.stateTime |> min 1 |> max 0))
-              |> scale (1 + (animAmt' * 0.2))
-          ]
-          |> Element.toHtml
 
-    Game gameState ->
-      collage
-        (floor width) (floor height)
-        [ rect width height |> filled black
-        , Stars.draw gameState.stars
-        , Asteroids.draw gameState.asteroids
-        , let
-            a =
-              if gameState.stateTime < invincibleLength then
-                cos (gameState.stateTime * 50) * 0.4 + 0.6
-              else 1
-          in Player.draw gameState.player |> alpha a
-        , Bullets.draw gameState.bullets
-        , SegmentParticles.draw gameState.segmentParticles
-        , Hud.draw gameState.sector gameState.score gameState.lives |> alpha (min gameState.stateTime 1)
-        ]
-        |> Element.toHtml
-
-    PostGame postGameState ->
-      collage
-        (floor width) (floor height)
-        [ rect width height |> filled black
-        , Stars.draw postGameState.stars
-        , Player.draw postGameState.player
-        , Bullets.draw postGameState.bullets
-        , SegmentParticles.draw postGameState.segmentParticles
-        , group
-              [ defaultText 26 ("sector " ++ toString postGameState.sector ++ " cleared") |> moveY 50
-              , defaultText 18 ("score: " ++ toString postGameState.score ++ " // " ++ Hud.livesText postGameState.lives) |> moveY -30
-              ]
-              |> alpha (min postGameState.stateTime 1)
-        ]
-        |> Element.toHtml
-
-    GameOver gameOverState ->
-      collage
-        (floor width) (floor height)
-        [ rect width height |> filled black
-        , Stars.draw gameOverState.stars
-        , Asteroids.draw gameOverState.asteroids
-        , Bullets.draw gameOverState.bullets
-        , SegmentParticles.draw gameOverState.segmentParticles
-        , group
-            [ defaultText 36 "GAME OVER" |> moveY 30
-            , defaultText 18 ("sector " ++ toString gameOverState.sector ++ " // score: " ++ toString gameOverState.score) |> moveY -30
+        Game gameState ->
+          group
+            [ Stars.draw gameState.stars
+            , Asteroids.draw gameState.asteroids
+            , let
+                a =
+                if gameState.stateTime < invincibleLength then
+                  cos (gameState.stateTime * 50) * 0.4 + 0.6
+                else 1
+             in Player.draw gameState.player |> alpha a
+            , Bullets.draw gameState.bullets
+            , SegmentParticles.draw gameState.segmentParticles
+            , Hud.draw gameState.sector gameState.score gameState.lives |> alpha (min gameState.stateTime 1)
             ]
-            |> alpha (min gameOverState.stateTime 1)
-        ]
-        |> Element.toHtml
+
+        PostGame postGameState ->
+          group
+            [ Stars.draw postGameState.stars
+            , Player.draw postGameState.player
+            , Bullets.draw postGameState.bullets
+            , SegmentParticles.draw postGameState.segmentParticles
+            , group
+                [ defaultText 26 ("sector " ++ toString postGameState.sector ++ " cleared") |> moveY 50
+                , defaultText 18 ("score: " ++ toString postGameState.score ++ " // " ++ Hud.livesText postGameState.lives) |> moveY -30
+                ]
+                |> alpha (min postGameState.stateTime 1)
+            ]
+
+        GameOver gameOverState ->
+          group
+            [ Stars.draw gameOverState.stars
+            , Asteroids.draw gameOverState.asteroids
+            , Bullets.draw gameOverState.bullets
+            , SegmentParticles.draw gameOverState.segmentParticles
+            , group
+                [ defaultText 36 "GAME OVER" |> moveY 30
+                , defaultText 18 ("sector " ++ toString gameOverState.sector ++ " // score: " ++ toString gameOverState.score) |> moveY -30
+                ]
+                |> alpha (min gameOverState.stateTime 1)
+            ]
+  in
+    collage
+      (floor width) (floor height)
+      [ rect width height |> filled black
+      , scene
+      ]
+      |> Element.toHtml
