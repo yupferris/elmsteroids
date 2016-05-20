@@ -44,6 +44,7 @@ type alias TitleState =
 type alias PreGameState =
   { sector : Int
   , score : Int
+  , lives : Int
   , stars : List Star
   , asteroids : List Asteroid
   , bullets : List Bullet
@@ -58,6 +59,7 @@ preGameLength = 3
 type alias GameState =
   { sector : Int
   , score : Int
+  , lives : Int
   , stars : List Star
   , player : Player
   , asteroids : List Asteroid
@@ -97,7 +99,7 @@ update msg model =
             let enter = 13
             in
               if key == enter then
-                PreGame (initPreGame 1 0 titleState.stars titleState.asteroids [] [] titleState.randomSeed)
+                PreGame (initPreGame 1 0 3 titleState.stars titleState.asteroids [] [] titleState.randomSeed)
               else model
 
           _ -> model)
@@ -143,11 +145,12 @@ tickTitle timeDelta titleState =
     , asteroids = Asteroids.tick timeDelta titleState.asteroids
   }
 
-initPreGame : Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> PreGameState
-initPreGame sector score stars asteroids bullets segmentParticles randomSeed =
+initPreGame : Int -> Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> PreGameState
+initPreGame sector score lives stars asteroids bullets segmentParticles randomSeed =
   { sector = sector
   , score = score
   , stars = stars
+  , lives = lives
   , asteroids = asteroids
   , bullets = bullets
   , segmentParticles = segmentParticles
@@ -176,6 +179,7 @@ tickPreGame timeDelta preGameState =
         (initGame
            preGameState.sector
            preGameState.score
+           preGameState.lives
            stars
            asteroids'
            bullets'
@@ -192,10 +196,11 @@ tickPreGame timeDelta preGameState =
           , stateTime = preGameState.stateTime + timeDelta
         }
 
-initGame : Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> GameState
-initGame sector score stars asteroids bullets segmentParticles randomSeed =
+initGame : Int -> Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> GameState
+initGame sector score lives stars asteroids bullets segmentParticles randomSeed =
   { sector = sector
   , score = score
+  , lives = lives
   , stars = stars
   , player =
       { position = (0, 0)
@@ -242,6 +247,7 @@ tickGame timeDelta gameState =
         (initPreGame
            gameState.sector
            score'
+           (gameState.lives - 1) -- TODO: Game over
            stars
            asteroids'
            bullets'
@@ -314,7 +320,7 @@ view model =
           , SegmentParticles.draw preGameState.segmentParticles
           , group
               [ defaultText 26 ("warping to sector " ++ toString preGameState.sector) |> moveY 50
-              , defaultText 18 ("score: " ++ toString preGameState.score) |> moveY -30
+              , defaultText 18 ("score: " ++ toString preGameState.score ++ " // " ++ Hud.livesText preGameState.lives) |> moveY -30
               ]
               |> alpha (min preGameState.stateTime (preGameLength - preGameState.stateTime |> min 1 |> max 0))
               |> scale (1 + (animAmt' * 0.2))
@@ -335,6 +341,6 @@ view model =
           in Player.draw gameState.player |> alpha a
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
-        , Hud.draw gameState.sector gameState.score |> alpha (min gameState.stateTime 1)
+        , Hud.draw gameState.sector gameState.score gameState.lives |> alpha (min gameState.stateTime 1)
         ]
         |> Element.toHtml
