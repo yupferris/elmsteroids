@@ -92,7 +92,7 @@ type alias PostGameState =
   }
 
 postGameLength : Float
-postGameLength = 8
+postGameLength = 5
 
 type alias GameOverState =
   { sector : Int
