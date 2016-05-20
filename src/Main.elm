@@ -258,7 +258,7 @@ tickGame timeDelta gameState =
     bullets = Bullets.tick timeDelta gameState.bullets
     (bullets', fireTime) =
       if gameState.keys.space && gameState.fireTime >= 0 then
-        (Bullets.fire gameState.player bullets, -0.5)
+        (Bullets.fire gameState.player bullets, -0.3)
       else (bullets, gameState.fireTime + timeDelta)
 
     ((asteroids', bullets'', segmentParticles, score, hitPlayer), randomSeed) =
