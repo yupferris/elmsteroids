@@ -74,9 +74,8 @@ type alias GameState =
   , stateTime : Float
   }
 
--- TODO: Better name?
-invincibleLength : Float
-invincibleLength = 3
+invinciblePeriod : Float
+invinciblePeriod = 3
 
 type alias PostGameState =
   { sector : Int
@@ -276,7 +275,7 @@ tickGame timeDelta gameState =
 
     ((asteroids', bullets'', segmentParticles, score, hitPlayer), randomSeed) =
       collide
-        (if gameState.stateTime < invincibleLength then Nothing else Just player)
+        (if gameState.stateTime < invinciblePeriod then Nothing else Just player)
         asteroids
         bullets'
         gameState.randomSeed
@@ -480,7 +479,7 @@ view model =
             , Asteroids.draw gameState.asteroids
             , let
                 a =
-                if gameState.stateTime < invincibleLength then
+                if gameState.stateTime < invinciblePeriod then
                   cos (gameState.stateTime * 50) * 0.4 + 0.6
                 else 1
              in Player.draw gameState.player |> alpha a

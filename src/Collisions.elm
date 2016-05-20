@@ -70,7 +70,6 @@ collidePlayerAsteroid player asteroid =
         return (True, particles)
     else return (False, [])
 
--- TODO: Probably a better way to do this
 pairs : List a -> List b -> List (a, b)
 pairs a b =
   case a of

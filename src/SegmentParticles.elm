@@ -24,7 +24,9 @@ segmentParticles initialVelocity segments =
   case segments of
     [] -> return []
     x::xs ->
-      (::) <$> segmentParticle initialVelocity x <*> segmentParticles initialVelocity xs
+      (::)
+        <$> segmentParticle initialVelocity x
+        <*> segmentParticles initialVelocity xs
 
 segmentParticle : Vector -> Segment -> State Seed SegmentParticle
 segmentParticle initialVelocity segment =

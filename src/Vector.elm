@@ -1,4 +1,4 @@
-module Vector exposing (Vector, length, normalize, add, sub, mul, mulS, div, divS, dot, cross, rotate, wrap)
+module Vector exposing (Vector, length, normalize, add, sub, mul, div, mulS, divS, dot, cross, rotate, wrap)
 
 type alias Vector = (Float, Float)
 
@@ -11,43 +11,35 @@ normalize : Vector -> Vector
 normalize vector =
   divS (length vector) vector
 
-add : Vector -> Vector -> Vector
-add x y =
+binOp : (Float -> Float -> Float) -> Vector -> Vector -> Vector
+binOp op x y =
   let
     (xx, xy) = x
     (yx, yy) = y
-  in (xx + yx, xy + yy)
+  in (xx `op` yx, xy `op` yy)
+
+add : Vector -> Vector -> Vector
+add = binOp (+)
 
 sub : Vector -> Vector -> Vector
-sub x y =
-  let
-    (xx, xy) = x
-    (yx, yy) = y
-  in (xx - yx, xy - yy)
+sub = binOp (-)
 
 mul : Vector -> Vector -> Vector
-mul x y =
-  let
-    (xx, xy) = x
-    (yx, yy) = y
-  in (xx * yx, xy * yy)
-
-mulS : Float -> Vector -> Vector
-mulS scalar vector =
-  let (x, y) = vector
-  in (x * scalar, y * scalar)
+mul = binOp (*)
 
 div : Vector -> Vector -> Vector
-div x y =
-  let
-    (xx, xy) = x
-    (yx, yy) = y
-  in (xx / yx, xy / yy)
+div = binOp (/)
+
+binOpS : (Float -> Float -> Float) -> Float -> Vector -> Vector
+binOpS op scalar vector =
+  let (x, y) = vector
+  in (x `op` scalar, y `op` scalar)
+
+mulS : Float -> Vector -> Vector
+mulS = binOpS (*)
 
 divS : Float -> Vector -> Vector
-divS scalar vector =
-  let (x, y) = vector
-  in (x / scalar, y / scalar)
+divS = binOpS (/)
 
 dot : Vector -> Vector -> Float
 dot x y =

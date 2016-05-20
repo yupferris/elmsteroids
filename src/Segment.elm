@@ -33,6 +33,8 @@ intersect a b =
         -- Segments are parallel and non-intersecting
         False
       else
+        -- Segments' lines intersect, but the segments
+        --  might not
         let
           t = cross bma s / rxs
           u = cross bma r / rxs
