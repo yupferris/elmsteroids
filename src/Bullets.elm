@@ -1,4 +1,4 @@
-module Bullets exposing (Bullet, tick, draw)
+module Bullets exposing (Bullet, fire, tick, draw)
 
 import List exposing (..)
 import Collage exposing (Form, group, rect, filled, move, alpha)
@@ -15,13 +15,11 @@ type alias Bullet =
   , timeUntilDeath : Float
   }
 
-tick : Float -> KeyStates -> Player -> List Bullet -> List Bullet
-tick timeDelta keys player =
-  fireBullet keys player
-  >> filterMap (moveBullet timeDelta >> killBullet timeDelta)
+tick : Float -> List Bullet -> List Bullet
+tick timeDelta = filterMap (moveBullet timeDelta >> killBullet timeDelta)
 
-fireBullet : KeyStates -> Player -> List Bullet -> List Bullet
-fireBullet keys player bullets =
+fire : KeyStates -> Player -> List Bullet -> List Bullet
+fire keys player bullets =
   if keys.spaceTapped then
     { position = Ship.front player.position player.rotation
     , velocity =

@@ -159,26 +159,23 @@ tickPreGame : Float -> PreGameState -> Model
 tickPreGame timeDelta preGameState =
   let
     stars = Stars.tick timeDelta preGameState.stars
-    --player = Player.tick timeDelta preGameState.keys preGameState.player
     asteroids = Asteroids.tick timeDelta preGameState.asteroids
-    -- TODO
-    bullets = preGameState.bullets--Bullets.tick timeDelta preGameState.keys preGameState.player preGameState.bullets
+    bullets = Bullets.tick timeDelta preGameState.bullets
 
-    ((asteroids', bullets', segmentParticles, score, hitPlayer), randomSeed) =
+    ((asteroids', bullets', segmentParticles, _, hitPlayer), randomSeed) =
       collide
         Nothing
         asteroids
         bullets
         preGameState.randomSeed
 
-    score' = preGameState.score + score
     segmentParticles' = SegmentParticles.tick timeDelta preGameState.segmentParticles ++ segmentParticles
   in
     if preGameState.stateTime >= preGameLength then
       Game
         (initGame
            preGameState.sector
-           score'
+           preGameState.score
            stars
            asteroids'
            bullets'
@@ -225,7 +222,10 @@ tickGame timeDelta gameState =
     stars = Stars.tick timeDelta gameState.stars
     player = Player.tick timeDelta gameState.keys gameState.player
     asteroids = Asteroids.tick timeDelta gameState.asteroids
-    bullets = Bullets.tick timeDelta gameState.keys gameState.player gameState.bullets
+    bullets =
+      gameState.bullets
+        |> Bullets.fire gameState.keys gameState.player
+        |> Bullets.tick timeDelta
 
     ((asteroids', bullets', segmentParticles, score, hitPlayer), randomSeed) =
       collide
