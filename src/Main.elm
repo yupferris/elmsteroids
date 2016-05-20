@@ -46,6 +46,8 @@ type alias PreGameState =
   , score : Int
   , stars : List Star
   , asteroids : List Asteroid
+  , bullets : List Bullet
+  , segmentParticles : List SegmentParticle
   , randomSeed : Seed
   , stateTime : Float
   }
@@ -66,6 +68,7 @@ type alias GameState =
   , stateTime : Float
   }
 
+-- TODO: Better name?
 invincibleLength : Float
 invincibleLength = 5
 
@@ -94,7 +97,7 @@ update msg model =
             let enter = 13
             in
               if key == enter then
-                PreGame (initPreGame 1 0 titleState.stars titleState.asteroids titleState.randomSeed)
+                PreGame (initPreGame 1 0 titleState.stars titleState.asteroids [] [] titleState.randomSeed)
               else model
 
           _ -> model)
@@ -103,7 +106,15 @@ update msg model =
        (case msg of
           Tick timeDelta ->
             if preGameState.stateTime >= preGameLength then
-              Game (initGame preGameState.sector preGameState.score preGameState.stars preGameState.asteroids preGameState.randomSeed)
+              Game
+                (initGame
+                   preGameState.sector
+                   preGameState.score
+                   preGameState.stars
+                   preGameState.asteroids
+                   preGameState.bullets
+                   preGameState.segmentParticles
+                   preGameState.randomSeed)
             else
               PreGame (tickPreGame (inSeconds timeDelta) preGameState)
           _ -> model)
@@ -144,12 +155,14 @@ tickTitle timeDelta titleState =
     , asteroids = Asteroids.tick timeDelta titleState.asteroids
   }
 
-initPreGame : Int -> Int -> List Star -> List Asteroid -> Seed -> PreGameState
-initPreGame sector score stars asteroids randomSeed =
+initPreGame : Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> PreGameState
+initPreGame sector score stars asteroids bullets segmentParticles randomSeed =
   { sector = sector
   , score = score
   , stars = stars
   , asteroids = asteroids
+  , bullets = bullets
+  , segmentParticles = segmentParticles
   , randomSeed = randomSeed
   , stateTime = 0
   }
@@ -159,11 +172,12 @@ tickPreGame timeDelta preGameState =
   { preGameState
     | stars = Stars.tick timeDelta preGameState.stars
     , asteroids = Asteroids.tick timeDelta preGameState.asteroids
+    -- TODO: Bullets and collisions
     , stateTime = preGameState.stateTime + timeDelta
   }
 
-initGame : Int -> Int -> List Star -> List Asteroid -> Seed -> GameState
-initGame sector score stars asteroids randomSeed =
+initGame : Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> GameState
+initGame sector score stars asteroids bullets segmentParticles randomSeed =
   { sector = sector
   , score = score
   , stars = stars
@@ -173,8 +187,8 @@ initGame sector score stars asteroids randomSeed =
       , rotation = 0
       }
   , asteroids = asteroids
-  , bullets = []
-  , segmentParticles = []
+  , bullets = bullets
+  , segmentParticles = segmentParticles
   , keys =
       { left = False
       , right = False
@@ -189,18 +203,28 @@ initGame sector score stars asteroids randomSeed =
 tickGame : Float -> GameState -> GameState
 tickGame timeDelta gameState =
   let
+    stars = Stars.tick timeDelta gameState.stars
+    player = Player.tick timeDelta gameState.keys gameState.player
     asteroids = Asteroids.tick timeDelta gameState.asteroids
     bullets = Bullets.tick timeDelta gameState.keys gameState.player gameState.bullets
 
-    ((asteroids', bullets', segmentParticles, score), randomSeed) = collide asteroids bullets gameState.randomSeed
+    ((asteroids', bullets', segmentParticles, score, hitPlayer), randomSeed) =
+      collide
+        (if gameState.stateTime < invincibleLength then Just player else Nothing)
+        asteroids
+        bullets
+        gameState.randomSeed
+
+    score' = gameState.score + score
+    segmentParticles' = SegmentParticles.tick timeDelta gameState.segmentParticles ++ segmentParticles
   in
     { gameState
-      | score = gameState.score + score
-      , stars = Stars.tick timeDelta gameState.stars
-      , player = Player.tick timeDelta gameState.keys gameState.player
+      | score = score'
+      , stars = stars
+      , player = player
       , asteroids = asteroids'
       , bullets = bullets'
-      , segmentParticles = SegmentParticles.tick timeDelta gameState.segmentParticles ++ segmentParticles
+      , segmentParticles = segmentParticles'
       , keys = KeyStates.tick gameState.keys
       , randomSeed = randomSeed
       , stateTime = gameState.stateTime + timeDelta
