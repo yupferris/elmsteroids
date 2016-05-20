@@ -1,4 +1,4 @@
-module KeyStates exposing (KeyStates, tick, pressed, released)
+module KeyStates exposing (KeyStates, pressed, released)
 
 import Keyboard exposing (..)
 
@@ -7,11 +7,8 @@ type alias KeyStates =
   , right : Bool
   , up : Bool
   , down : Bool
-  , spaceTapped : Bool
+  , space : Bool
   }
-
-tick : KeyStates -> KeyStates
-tick keys = { keys | spaceTapped = False }
 
 left : KeyCode
 left = 37
@@ -30,13 +27,11 @@ space = 32
 
 pressed : KeyCode -> KeyStates -> KeyStates
 pressed key keys =
-  -- For some reason case didn't work here
-  -- The compiler thought `left` and `right` were the same patterns (?)
   if key == left then { keys | left = True }
   else if key == right then { keys | right = True }
   else if key == up then { keys | up = True }
   else if key == down then { keys | down = True }
-  else if key == space then { keys | spaceTapped = True }
+  else if key == space then { keys | space = True }
   else keys
 
 released : KeyCode -> KeyStates -> KeyStates
@@ -45,4 +40,5 @@ released key keys =
   else if key == right then { keys | right = False }
   else if key == up then { keys | up = False }
   else if key == down then { keys | down = False }
+  else if key == space then { keys | space = False }
   else keys

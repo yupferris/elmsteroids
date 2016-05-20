@@ -67,6 +67,7 @@ type alias GameState =
   , segmentParticles : List SegmentParticle
   , keys : KeyStates
   , randomSeed : Seed
+  , fireTime : Float
   , stateTime : Float
   }
 
@@ -215,9 +216,10 @@ initGame sector score lives stars asteroids bullets segmentParticles randomSeed 
       , right = False
       , up = False
       , down = False
-      , spaceTapped = False
+      , space = False
       }
   , randomSeed = randomSeed
+  , fireTime = 0
   , stateTime = 0
   }
 
@@ -227,16 +229,17 @@ tickGame timeDelta gameState =
     stars = Stars.tick timeDelta gameState.stars
     player = Player.tick timeDelta gameState.keys gameState.player
     asteroids = Asteroids.tick timeDelta gameState.asteroids
-    bullets =
-      gameState.bullets
-        |> Bullets.fire gameState.keys gameState.player
-        |> Bullets.tick timeDelta
+    bullets = Bullets.tick timeDelta gameState.bullets
+    (bullets', fireTime) =
+      if gameState.keys.space && gameState.fireTime >= 0 then
+        (Bullets.fire gameState.player bullets, -0.3)
+      else (bullets, gameState.fireTime + timeDelta)
 
-    ((asteroids', bullets', segmentParticles, score, hitPlayer), randomSeed) =
+    ((asteroids', bullets'', segmentParticles, score, hitPlayer), randomSeed) =
       collide
         (if gameState.stateTime < invincibleLength then Nothing else Just player)
         asteroids
-        bullets
+        bullets'
         gameState.randomSeed
 
     score' = gameState.score + score
@@ -250,7 +253,7 @@ tickGame timeDelta gameState =
            (gameState.lives - 1) -- TODO: Game over
            stars
            asteroids'
-           bullets'
+           bullets''
            segmentParticles'
            randomSeed)
     else
@@ -277,10 +280,10 @@ tickGame timeDelta gameState =
               , stars = stars
               , player = player
               , asteroids = asteroids'
-              , bullets = bullets'
+              , bullets = bullets''
               , segmentParticles = segmentParticles'
-              , keys = KeyStates.tick gameState.keys
               , randomSeed = randomSeed
+              , fireTime = fireTime
               , stateTime = gameState.stateTime + timeDelta
             }
 

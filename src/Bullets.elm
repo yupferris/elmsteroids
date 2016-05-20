@@ -7,7 +7,6 @@ import Vector exposing (..)
 import Bounds exposing (..)
 import Ship
 import Player exposing (Player)
-import KeyStates exposing (KeyStates)
 
 type alias Bullet =
   { position : Vector
@@ -15,20 +14,17 @@ type alias Bullet =
   , timeUntilDeath : Float
   }
 
+fire : Player -> List Bullet -> List Bullet
+fire player bullets =
+  { position = Ship.front player.position player.rotation
+  , velocity =
+    player.velocity
+  |> add (rotate player.rotation (0, 60))
+  , timeUntilDeath = 5.0
+  } :: bullets
+
 tick : Float -> List Bullet -> List Bullet
 tick timeDelta = filterMap (moveBullet timeDelta >> killBullet timeDelta)
-
-fire : KeyStates -> Player -> List Bullet -> List Bullet
-fire keys player bullets =
-  if keys.spaceTapped then
-    { position = Ship.front player.position player.rotation
-    , velocity =
-      player.velocity
-      |> add (rotate player.rotation (0, 60))
-    , timeUntilDeath = 5.0
-    } :: bullets
-  else
-    bullets
 
 moveBullet : Float -> Bullet -> Bullet
 moveBullet timeDelta bullet =
