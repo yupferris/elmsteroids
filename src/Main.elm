@@ -122,7 +122,7 @@ update msg model =
      Game gameState ->
        (case msg of
           Init _ -> model
-          Tick timeDelta -> Game (tickGame (inSeconds timeDelta) gameState)
+          Tick timeDelta -> tickGame (inSeconds timeDelta) gameState
 
           KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
           KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys })
@@ -200,7 +200,7 @@ initGame sector score stars asteroids bullets segmentParticles randomSeed =
   , stateTime = 0
   }
 
-tickGame : Float -> GameState -> GameState
+tickGame : Float -> GameState -> Model
 tickGame timeDelta gameState =
   let
     stars = Stars.tick timeDelta gameState.stars
@@ -218,17 +218,29 @@ tickGame timeDelta gameState =
     score' = gameState.score + score
     segmentParticles' = SegmentParticles.tick timeDelta gameState.segmentParticles ++ segmentParticles
   in
-    { gameState
-      | score = score'
-      , stars = stars
-      , player = player
-      , asteroids = asteroids'
-      , bullets = bullets'
-      , segmentParticles = segmentParticles'
-      , keys = KeyStates.tick gameState.keys
-      , randomSeed = randomSeed
-      , stateTime = gameState.stateTime + timeDelta
-    }
+    if hitPlayer then
+      PreGame
+        (initPreGame
+           gameState.sector
+           score'
+           stars
+           asteroids'
+           bullets'
+           segmentParticles'
+           randomSeed)
+    else
+      Game
+        { gameState
+          | score = score'
+          , stars = stars
+          , player = player
+          , asteroids = asteroids'
+          , bullets = bullets'
+          , segmentParticles = segmentParticles'
+          , keys = KeyStates.tick gameState.keys
+          , randomSeed = randomSeed
+          , stateTime = gameState.stateTime + timeDelta
+        }
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
