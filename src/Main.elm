@@ -321,20 +321,16 @@ tickGame timeDelta gameState =
     else
       case asteroids' of
         [] ->
-          let
-            ((stars', asteroids''), randomSeed') =
-              initStarsAndAsteroids randomSeed
-          in
-            PostGame
-              (initPostGame
-                 gameState.sector
-                 score'
-                 gameState.lives
-                 stars'
-                 player
-                 bullets''
-                 segmentParticles'
-                 randomSeed)
+          PostGame
+            (initPostGame
+               gameState.sector
+               score'
+               gameState.lives
+               stars
+               player
+               bullets''
+               segmentParticles'
+               randomSeed)
         _ ->
           Game
             { gameState
