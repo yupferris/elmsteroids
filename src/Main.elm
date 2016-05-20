@@ -23,8 +23,8 @@ import Hud
 
 main =
   Html.App.program
-    { init = init
-    , update = update
+    { init = (init, Cmd.none)
+    , update = \msg model -> (update msg model, Cmd.none)
     , subscriptions = subscriptions
     , view = view
     }
@@ -105,8 +105,8 @@ type alias GameOverState =
   , stateTime : Float
   }
 
-init : (Model, Cmd Msg)
-init = (Uninitialized, Cmd.none)
+init : Model
+init = Uninitialized
 
 type Msg
   = Init Time
@@ -114,62 +114,60 @@ type Msg
   | KeyPressed KeyCode
   | KeyReleased KeyCode
 
-update : Msg -> Model -> (Model, Cmd Msg)
+update : Msg -> Model -> Model
 update msg model =
-  (case model of
-     Uninitialized ->
-       case msg of
-         Init time ->
-           let randomSeed = inMilliseconds time |> floor |> initialSeed
-           in Title (initTitle randomSeed)
-         _ -> model
+  case model of
+    Uninitialized ->
+      case msg of
+        Init time ->
+          let randomSeed = inMilliseconds time |> floor |> initialSeed
+          in Title (initTitle randomSeed)
+        _ -> model
 
-     Title titleState ->
-       case msg of
-         Tick timeDelta -> Title (tickTitle (inSeconds timeDelta) titleState)
+    Title titleState ->
+      case msg of
+        Tick timeDelta -> Title (tickTitle (inSeconds timeDelta) titleState)
 
-         KeyPressed key ->
-           let enter = 13
-           in
-             if key == enter then
-               PreGame (initPreGame 1 0 3 titleState.stars titleState.asteroids [] [] titleState.randomSeed)
-             else model
+        KeyPressed key ->
+          let enter = 13
+          in
+            if key == enter then
+              PreGame (initPreGame 1 0 3 titleState.stars titleState.asteroids [] [] titleState.randomSeed)
+            else model
 
-         _ -> model
+        _ -> model
 
-     PreGame preGameState ->
-       case msg of
-         Tick timeDelta -> tickPreGame (inSeconds timeDelta) preGameState
-         _ -> model
+    PreGame preGameState ->
+      case msg of
+        Tick timeDelta -> tickPreGame (inSeconds timeDelta) preGameState
+        _ -> model
 
-     Game gameState ->
-       case msg of
-         Tick timeDelta -> tickGame (inSeconds timeDelta) gameState
+    Game gameState ->
+      case msg of
+        Tick timeDelta -> tickGame (inSeconds timeDelta) gameState
 
-         KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
-         KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys }
+        KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
+        KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys }
 
-         _ -> model
+        _ -> model
 
-     PostGame postGameState ->
-       case msg of
-         Tick timeDelta -> tickPostGame (inSeconds timeDelta) postGameState
-         _ -> model
+    PostGame postGameState ->
+      case msg of
+        Tick timeDelta -> tickPostGame (inSeconds timeDelta) postGameState
+        _ -> model
 
-     GameOver gameOverState ->
-       case msg of
-         Tick timeDelta -> tickGameOver (inSeconds timeDelta) gameOverState
+    GameOver gameOverState ->
+      case msg of
+        Tick timeDelta -> tickGameOver (inSeconds timeDelta) gameOverState
 
-         KeyPressed key ->
-           let enter = 13
-           in
-             if key == enter then
-               Title (initTitle gameOverState.randomSeed)
-             else model
+        KeyPressed key ->
+          let enter = 13
+          in
+            if key == enter then
+              Title (initTitle gameOverState.randomSeed)
+            else model
 
-         _ -> model
-
-  , Cmd.none)
+        _ -> model
 
 initTitle : Seed -> TitleState
 initTitle randomSeed =
