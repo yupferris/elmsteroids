@@ -104,19 +104,7 @@ update msg model =
 
      PreGame preGameState ->
        (case msg of
-          Tick timeDelta ->
-            if preGameState.stateTime >= preGameLength then
-              Game
-                (initGame
-                   preGameState.sector
-                   preGameState.score
-                   preGameState.stars
-                   preGameState.asteroids
-                   preGameState.bullets
-                   preGameState.segmentParticles
-                   preGameState.randomSeed)
-            else
-              PreGame (tickPreGame (inSeconds timeDelta) preGameState)
+          Tick timeDelta -> tickPreGame (inSeconds timeDelta) preGameState
           _ -> model)
 
      Game gameState ->
@@ -167,14 +155,45 @@ initPreGame sector score stars asteroids bullets segmentParticles randomSeed =
   , stateTime = 0
   }
 
-tickPreGame : Float -> PreGameState -> PreGameState
+tickPreGame : Float -> PreGameState -> Model
 tickPreGame timeDelta preGameState =
-  { preGameState
-    | stars = Stars.tick timeDelta preGameState.stars
-    , asteroids = Asteroids.tick timeDelta preGameState.asteroids
-    -- TODO: Bullets and collisions
-    , stateTime = preGameState.stateTime + timeDelta
-  }
+  let
+    stars = Stars.tick timeDelta preGameState.stars
+    --player = Player.tick timeDelta preGameState.keys preGameState.player
+    asteroids = Asteroids.tick timeDelta preGameState.asteroids
+    -- TODO
+    bullets = preGameState.bullets--Bullets.tick timeDelta preGameState.keys preGameState.player preGameState.bullets
+
+    ((asteroids', bullets', segmentParticles, score, hitPlayer), randomSeed) =
+      collide
+        Nothing
+        asteroids
+        bullets
+        preGameState.randomSeed
+
+    score' = preGameState.score + score
+    segmentParticles' = SegmentParticles.tick timeDelta preGameState.segmentParticles ++ segmentParticles
+  in
+    if preGameState.stateTime >= preGameLength then
+      Game
+        (initGame
+           preGameState.sector
+           score'
+           stars
+           asteroids'
+           bullets'
+           segmentParticles'
+           randomSeed)
+    else
+      PreGame
+        { preGameState
+          | stars = stars
+          , asteroids = asteroids'
+          , bullets = bullets'
+          , segmentParticles = segmentParticles'
+          , randomSeed = randomSeed
+          , stateTime = preGameState.stateTime + timeDelta
+        }
 
 initGame : Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> GameState
 initGame sector score stars asteroids bullets segmentParticles randomSeed =
@@ -291,6 +310,8 @@ view model =
             animAmt' = 1 - animAmt
           in
             Ship.draw (0, 0) ((animAmt' ^ 3) * 8) |> scale (1 + (animAmt' ^ 2) * 2) |> alpha animAmt
+        , Bullets.draw preGameState.bullets
+        , SegmentParticles.draw preGameState.segmentParticles
         , group
             [ defaultText 26 ("warping to sector " ++ toString preGameState.sector) |> moveY 50
             , defaultText 18 ("score: " ++ toString preGameState.score) |> moveY -30
