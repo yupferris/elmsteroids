@@ -5,7 +5,7 @@ import Time exposing (..)
 import AnimationFrame exposing (..)
 import Keyboard exposing (..)
 import Text exposing (fromString, style, link)
-import Collage exposing (Form, collage, group, rect, filled, text, moveY, scale, alpha)
+import Collage exposing (Form, collage, group, rect, filled, text, moveY, scale, alpha, scale)
 import Element
 import Color exposing (..)
 import State exposing (..)
@@ -300,25 +300,26 @@ view model =
         |> Element.toHtml
 
     PreGame preGameState ->
-      collage
-        (floor width) (floor height)
-        [ rect width height |> filled black
-        , Stars.draw preGameState.stars
-        , Asteroids.draw preGameState.asteroids
-        , let
-            animAmt = preGameState.stateTime / preGameLength
-            animAmt' = 1 - animAmt
-          in
-            Ship.draw (0, 0) ((animAmt' ^ 3) * 8) |> scale (1 + (animAmt' ^ 2) * 2) |> alpha animAmt
-        , Bullets.draw preGameState.bullets
-        , SegmentParticles.draw preGameState.segmentParticles
-        , group
-            [ defaultText 26 ("warping to sector " ++ toString preGameState.sector) |> moveY 50
-            , defaultText 18 ("score: " ++ toString preGameState.score) |> moveY -30
-            ]
-            |> alpha (min (preGameState.stateTime) (preGameLength - preGameState.stateTime |> min 1 |> max 0))
-        ]
-        |> Element.toHtml
+      let
+        animAmt = preGameState.stateTime / preGameLength
+        animAmt' = 1 - animAmt
+      in
+        collage
+          (floor width) (floor height)
+          [ rect width height |> filled black
+          , Stars.draw preGameState.stars
+          , Asteroids.draw preGameState.asteroids
+          , Ship.draw (0, 0) ((animAmt' ^ 3) * 8) |> scale (1 + (animAmt' ^ 2) * 2) |> alpha animAmt
+          , Bullets.draw preGameState.bullets
+          , SegmentParticles.draw preGameState.segmentParticles
+          , group
+              [ defaultText 26 ("warping to sector " ++ toString preGameState.sector) |> moveY 50
+              , defaultText 18 ("score: " ++ toString preGameState.score) |> moveY -30
+              ]
+              |> alpha (min preGameState.stateTime (preGameLength - preGameState.stateTime |> min 1 |> max 0))
+              |> scale (1 + (animAmt' * 0.2))
+          ]
+          |> Element.toHtml
 
     Game gameState ->
       collage
@@ -334,6 +335,6 @@ view model =
           in Player.draw gameState.player |> alpha a
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
-        , Hud.draw gameState.sector gameState.score
+        , Hud.draw gameState.sector gameState.score |> alpha (min gameState.stateTime 1)
         ]
         |> Element.toHtml
