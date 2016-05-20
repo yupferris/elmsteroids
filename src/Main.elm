@@ -4,7 +4,6 @@ import Random exposing (..)
 import Time exposing (..)
 import AnimationFrame exposing (..)
 import Keyboard exposing (..)
-import Text exposing (fromString, style, link)
 import Collage exposing (Form, collage, group, rect, filled, text, moveY, scale, alpha, scale)
 import Element
 import Color exposing (..)
@@ -21,6 +20,7 @@ import Ship
 import Collisions exposing (..)
 import Hud
 
+main : Program Never
 main =
   Html.App.program
     { init = (init, Cmd.none)
