@@ -254,18 +254,35 @@ tickGame timeDelta gameState =
            segmentParticles'
            randomSeed)
     else
-      Game
-        { gameState
-          | score = score'
-          , stars = stars
-          , player = player
-          , asteroids = asteroids'
-          , bullets = bullets'
-          , segmentParticles = segmentParticles'
-          , keys = KeyStates.tick gameState.keys
-          , randomSeed = randomSeed
-          , stateTime = gameState.stateTime + timeDelta
-        }
+      case asteroids' of
+        [] ->
+          let
+            ((stars', asteroids''), randomSeed') =
+              initStarsAndAsteroids randomSeed
+          in
+            PreGame
+              (initPreGame
+                 (gameState.sector + 1)
+                 score'
+                 gameState.lives
+                 stars'
+                 asteroids''
+                 []
+                 []
+                 randomSeed')
+        _ ->
+          Game
+            { gameState
+              | score = score'
+              , stars = stars
+              , player = player
+              , asteroids = asteroids'
+              , bullets = bullets'
+              , segmentParticles = segmentParticles'
+              , keys = KeyStates.tick gameState.keys
+              , randomSeed = randomSeed
+              , stateTime = gameState.stateTime + timeDelta
+            }
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
