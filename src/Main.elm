@@ -34,6 +34,7 @@ type Model
   | Title TitleState
   | PreGame PreGameState
   | Game GameState
+  | PostGame PostGameState
   | GameOver GameOverState
 
 type alias TitleState =
@@ -76,6 +77,22 @@ type alias GameState =
 -- TODO: Better name?
 invincibleLength : Float
 invincibleLength = 3
+
+type alias PostGameState =
+  { sector : Int
+  , score : Int
+  , lives : Int
+  , stars : List Star
+  , player : Player
+  , bullets : List Bullet
+  , segmentParticles : List SegmentParticle
+  , keys : KeyStates
+  , randomSeed : Seed
+  , stateTime : Float
+  }
+
+postGameLength : Float
+postGameLength = 8
 
 type alias GameOverState =
   { sector : Int
@@ -127,11 +144,17 @@ update msg model =
 
      Game gameState ->
        case msg of
-         Init _ -> model
          Tick timeDelta -> tickGame (inSeconds timeDelta) gameState
 
          KeyPressed key -> Game { gameState | keys = KeyStates.pressed key gameState.keys }
          KeyReleased key -> Game { gameState | keys = KeyStates.released key gameState.keys }
+
+         _ -> model
+
+     PostGame postGameState ->
+       case msg of
+         Tick timeDelta -> tickPostGame (inSeconds timeDelta) postGameState
+         _ -> model
 
      GameOver gameOverState ->
        case msg of
@@ -302,16 +325,16 @@ tickGame timeDelta gameState =
             ((stars', asteroids''), randomSeed') =
               initStarsAndAsteroids randomSeed
           in
-            PreGame
-              (initPreGame
-                 (gameState.sector + 1)
+            PostGame
+              (initPostGame
+                 gameState.sector
                  score'
                  gameState.lives
                  stars'
-                 asteroids''
-                 []
-                 []
-                 randomSeed')
+                 player
+                 bullets''
+                 segmentParticles'
+                 randomSeed)
         _ ->
           Game
             { gameState
@@ -325,6 +348,57 @@ tickGame timeDelta gameState =
               , fireTime = fireTime
               , stateTime = gameState.stateTime + timeDelta
             }
+
+initPostGame : Int -> Int -> Int -> List Star -> Player -> List Bullet -> List SegmentParticle -> Seed -> PostGameState
+initPostGame sector score lives stars player bullets segmentParticles randomSeed =
+  { sector = sector
+  , score = score
+  , stars = stars
+  , lives = lives
+  , player = player
+  , bullets = bullets
+  , segmentParticles = segmentParticles
+  , keys =
+      { left = False
+      , right = False
+      , up = False
+      , down = False
+      , space = False
+      }
+  , randomSeed = randomSeed
+  , stateTime = 0
+  }
+
+tickPostGame : Float -> PostGameState -> Model
+tickPostGame timeDelta postGameState =
+  let
+    stars = Stars.tick timeDelta postGameState.stars
+    player = Player.tick timeDelta postGameState.keys postGameState.player
+    bullets = Bullets.tick timeDelta postGameState.bullets
+    segmentParticles = SegmentParticles.tick timeDelta postGameState.segmentParticles
+  in
+    if postGameState.stateTime >= postGameLength then
+      PreGame
+        (let ((stars', asteroids), randomSeed) = initStarsAndAsteroids postGameState.randomSeed
+         in
+           initPreGame
+             (postGameState.sector + 1)
+             postGameState.score
+             postGameState.lives
+             stars'
+             asteroids
+             []
+             []
+             randomSeed)
+    else
+      PostGame
+        { postGameState
+          | stars = stars
+          , player = player
+          , bullets = bullets
+          , segmentParticles = segmentParticles
+          , stateTime = postGameState.stateTime + timeDelta
+        }
 
 initGameOver : Int -> Int -> List Star -> List Asteroid -> List Bullet -> List SegmentParticle -> Seed -> GameOverState
 initGameOver sector score stars asteroids bullets segmentParticles randomSeed =
@@ -433,6 +507,22 @@ view model =
         , Bullets.draw gameState.bullets
         , SegmentParticles.draw gameState.segmentParticles
         , Hud.draw gameState.sector gameState.score gameState.lives |> alpha (min gameState.stateTime 1)
+        ]
+        |> Element.toHtml
+
+    PostGame postGameState ->
+      collage
+        (floor width) (floor height)
+        [ rect width height |> filled black
+        , Stars.draw postGameState.stars
+        , Player.draw postGameState.player
+        , Bullets.draw postGameState.bullets
+        , SegmentParticles.draw postGameState.segmentParticles
+        , group
+              [ defaultText 26 ("sector " ++ toString postGameState.sector ++ " cleared") |> moveY 50
+              , defaultText 18 ("score: " ++ toString postGameState.score ++ " // " ++ Hud.livesText postGameState.lives) |> moveY -30
+              ]
+              |> alpha (min postGameState.stateTime 1)
         ]
         |> Element.toHtml
 
