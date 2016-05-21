@@ -18,7 +18,7 @@ tick timeDelta keys player =
   let
     position =
       add player.position (mulS timeDelta player.velocity)
-      |> wrap bounds
+      |> wrap
 
     accel = 57.0
     upAccel = if keys.up then accel else 0
@@ -43,6 +43,4 @@ tick timeDelta keys player =
     }
 
 draw : Player -> Form
-draw player =
-  -- TODO: Wrapping
-  Ship.draw player.position player.rotation
+draw player = Ship.draw player.position player.rotation

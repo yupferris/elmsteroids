@@ -60,13 +60,14 @@ tick timeDelta =
 moveParticle : Float -> SegmentParticle -> SegmentParticle
 moveParticle timeDelta particle =
   { particle | position =
-      add particle.position (mulS timeDelta particle.velocity)
-      |> wrap bounds}
+      add particle.position (mulS timeDelta particle.velocity) |> wrap
+  }
 
 rotateParticle : Float -> SegmentParticle -> SegmentParticle
 rotateParticle timeDelta particle =
   { particle | rotation =
-      particle.rotation + particle.rotationVelocity * timeDelta }
+      particle.rotation + particle.rotationVelocity * timeDelta
+  }
 
 killParticle : Float -> SegmentParticle -> Maybe SegmentParticle
 killParticle timeDelta particle =
@@ -82,7 +83,7 @@ draw = map drawParticle >> group
 drawParticle : SegmentParticle -> Form
 drawParticle particle =
   particle.segment
-    |> Segment.wrap bounds
+    |> Segment.wrap
     |> map (drawSegment particle.rotation)
     |> group
     |> move particle.position

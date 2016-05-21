@@ -29,8 +29,8 @@ tick timeDelta = filterMap (moveBullet timeDelta >> killBullet timeDelta)
 moveBullet : Float -> Bullet -> Bullet
 moveBullet timeDelta bullet =
   { bullet | position =
-      add bullet.position (mulS timeDelta bullet.velocity)
-      |> wrap bounds }
+      add bullet.position (mulS timeDelta bullet.velocity) |> wrap
+  }
 
 killBullet : Float -> Bullet -> Maybe Bullet
 killBullet timeDelta bullet =

@@ -462,7 +462,8 @@ view model =
             group
               [ Stars.draw preGameState.stars
               , Asteroids.draw preGameState.asteroids
-              , Ship.draw (0, 0) ((animAmt' ^ 3) * 8) |> scale (1 + (animAmt' ^ 2) * 2) |> alpha animAmt
+              -- Seems there are rendering bugs when drawing the ship with alpha = 0
+              , Ship.draw (0, 0) ((animAmt' ^ 3) * 8) |> scale (1 + (animAmt' ^ 2) * 2) |> alpha (animAmt |> max 0.00001)
               , Bullets.draw preGameState.bullets
               , SegmentParticles.draw preGameState.segmentParticles
               , group

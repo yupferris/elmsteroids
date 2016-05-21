@@ -1,6 +1,6 @@
-module Asteroids exposing (Asteroid, liesInside, triangles, segments, split, init, tick, draw)
+module Asteroids exposing (Asteroid, liesInside, wrappedSegments, split, init, tick, draw)
 
-import List exposing (map, any)
+import List exposing (map, concatMap, any)
 import Collage exposing (Form, group, polygon, filled, outlined, defaultLine)
 import Color exposing (..)
 import Random exposing (Seed, int, float, step)
@@ -27,11 +27,7 @@ absolutePoints asteroid =
 
 liesInside : Vector -> Asteroid -> Bool
 liesInside point =
-  -- TODO: Handle wrapping
-  -- Currently it's possible to shoot through parts of an asteroid
-  -- that are wrapping around the screen. This will also be a
-  -- problem when checking for ship/asteroid collision.
-  triangles >> any (Triangle.liesInside point)
+  triangles >> concatMap Triangle.wrap >> any (Triangle.liesInside point)
 
 triangles : Asteroid -> List Triangle
 triangles asteroid =
@@ -68,6 +64,9 @@ segments' firstPoint points =
           }
       in segment :: segments' firstPoint xs
 
+wrappedSegments : Asteroid -> List Segment
+wrappedSegments =
+  segments >> concatMap Segment.wrap
 
 split : Asteroid -> State Seed (List Asteroid, List SegmentParticle)
 split asteroid =
@@ -161,8 +160,7 @@ initPoints' segAngleDelta minRadius maxRadius count =
             y = sin angle' * radius'
             point = (x, y)
           in
-            initPoints' segAngleDelta minRadius maxRadius (count - 1) >>= \acc ->
-              return (point :: acc)
+            ((::) point) <$> initPoints' segAngleDelta minRadius maxRadius (count - 1)
 
 tick : Float -> List Asteroid -> List Asteroid
 tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)
@@ -170,27 +168,44 @@ tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)
 moveAsteroid : Float -> Asteroid -> Asteroid
 moveAsteroid timeDelta asteroid =
   { asteroid | position =
-      add asteroid.position (mulS timeDelta asteroid.velocity)
-      |> wrap Bounds.bounds }
+      add asteroid.position (mulS timeDelta asteroid.velocity) |> wrap
+  }
 
 rotateAsteroid : Float -> Asteroid -> Asteroid
 rotateAsteroid timeDelta asteroid =
   { asteroid | rotation =
-      asteroid.rotation + asteroid.rotationVelocity * timeDelta }
+      asteroid.rotation + asteroid.rotationVelocity * timeDelta
+  }
 
 draw : List Asteroid -> Form
 draw = map drawAsteroid >> group
 
 drawAsteroid : Asteroid -> Form
 drawAsteroid asteroid =
-  let
-    shape =
-      asteroid
-        |> absolutePoints
-        |> polygon
+  asteroid
+    |> absolutePoints
+    |> wrapPoints
+    |> map
+       (\points ->
+          let shape = points |> polygon
+          in
+            group
+              [ shape |> filled black
+              , shape |> outlined { defaultLine | color = white }
+              ])
+    |> group
+
+wrapPoints : List Vector -> List (List Vector)
+wrapPoints points =
+  let move o = map (add o)
   in
-    -- TODO: Wrapping
-    group
-      [ shape |> filled black
-      , shape |> outlined { defaultLine | color = white }
-      ]
+    [points]
+      |> wrapPoints' (any (\(x, _) -> x < left)) (move (width, 0))
+      |> wrapPoints' (any (\(x, _) -> x > right)) (move (-width, 0))
+      |> wrapPoints' (any (\(_, y) -> y > top)) (move (0, -height))
+      |> wrapPoints' (any (\(_, y) -> y < bottom)) (move (0, height))
+
+wrapPoints' : (List Vector -> Bool) -> (List Vector -> List Vector) -> List (List Vector) -> List (List Vector)
+wrapPoints' f g points =
+  if any f points then points ++ map g points
+  else points
