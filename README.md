@@ -24,7 +24,7 @@ Another major source of pain is Elm's inexpressiveness and lack of standard libr
 
 I think Elm is an interesting language/toolchain. It's a fairly minimal language that sits somewhere between Haskell and F#, but feels to me like it really lacks the power of either its counterparts. On the purely functional side, it lacks many of the out-of-the-box tools you'd expect to help you solve sizeable problems and do things properly in a functional manner without making a mess. On the accessibility side, the syntax is fairly light and the standard library is by no means overwhelming, but there's likely still going to be a large gap when transitioning from Elm to a more mature language/environment, and the compatibility story appears "fragmented" at best. On the web side, there are many other frameworks proven to solve the "let's build scalable stuff", and to my knowledge Elm very much lacks larger examples of doing this. I'm not saying one _can't_ build a large state-of-the-art web app, but I am saying "proceed with caution" if your plan is to do so _right now_.
 
-All in all, this was definitely a fun project, and I'm glad I tried Elm. But I don't think it has the potential to become a "go-to" in my toolbox any time soon. Still, I recommend you give it a shot and make something cool with it. It definitely seems to fit the bill for making "cute little stateless things" like this :)
+All in all, this was definitely a fun project, and I'm glad I tried Elm. But, I'm not sure it has the potential to become a "go-to" in my toolbox. Still, I recommend you give it a shot and make something cool with it. It definitely seems to fit the bill for making "cute little stateless things" like this :)
 
 ## License
 This code is licensed under the BSD2 license (see LICENSE).
