@@ -4,7 +4,6 @@ import List exposing (..)
 import Collage exposing (Form, group, rect, filled, move, alpha)
 import Color exposing (..)
 import Vector exposing (..)
-import Bounds exposing (..)
 import Ship
 import Player exposing (Player)
 

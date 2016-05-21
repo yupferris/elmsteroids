@@ -1,9 +1,7 @@
 module Player exposing (Player, tick, draw)
 
 import Collage exposing (Form)
-import Color exposing (..)
 import Vector exposing (..)
-import Bounds exposing (..)
 import Ship
 import KeyStates exposing (KeyStates)
 

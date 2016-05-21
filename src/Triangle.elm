@@ -1,7 +1,5 @@
 module Triangle exposing (Triangle, segments, liesInside, wrap)
 
-import List exposing (..)
-import Bounds exposing (..)
 import Vector exposing (..)
 import Segment exposing (..)
 import Wrap

@@ -1,8 +1,6 @@
 module Segment exposing (Segment, center, intersect, wrap)
 
-import List exposing (..)
 import Vector exposing (..)
-import Bounds exposing (..)
 import Wrap
 
 type alias Segment =

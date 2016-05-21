@@ -7,7 +7,6 @@ import Random exposing (Seed, float, step)
 import State exposing (..)
 import Vector exposing (..)
 import Segment exposing (Segment, center)
-import Bounds exposing (..)
 
 type alias SegmentParticle =
   { position : Vector
