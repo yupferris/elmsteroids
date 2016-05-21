@@ -66,8 +66,9 @@ collidePlayerAsteroid player asteroid =
     segmentPairs = pairs shipSegments asteroidSegments
     liesInside' x = Asteroids.liesInside x asteroid
   in
-    -- TODO: Check if any ship triangle points are inside the asteroid
-    if any (\(x, y) -> intersect x y) segmentPairs || any (\t -> liesInside' t.a || liesInside' t.b || liesInside' t.c) shipTriangles then
+    if
+      any (\(x, y) -> intersect x y) segmentPairs
+      || any (\t -> liesInside' t.a || liesInside' t.b || liesInside' t.c) shipTriangles then
       segmentParticles player.velocity shipSegments >>= \particles ->
         return (True, particles)
     else return (False, [])
