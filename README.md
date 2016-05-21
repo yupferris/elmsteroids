@@ -7,7 +7,7 @@ An Asteroids clone written in [Elm](http://elm-lang.org/) 0.17.
 [Play elmsteroids here!](http://yupferris.github.io/elmsteroids/)
 
 ## Controls
-Arrow keys move, space shoots. Enter/return moves to the next game state (where applicable). That's it!
+<kbd>←</kbd>, <kbd>↑</kbd>, <kbd>→</kbd> <kbd>↓</kbd> move, <kbd>space</kbd> shoots. <kbd>enter/return</kbd> moves to the next game state (where applicable). That's it!
 
 ## Details/Post Mortem
 This is an Asteroids clone written in Elm. It was written to get a feel for Elm with a somewhat non-trivial project, which is why I went nuts with details like precise collisions, proper space wrapping, particles, various game states, etc. Overall, it was a fun project, and it was especially fun to implement in a purely functional language.
