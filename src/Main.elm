@@ -448,7 +448,7 @@ view model =
             , Asteroids.draw titleState.asteroids
             , group
                 [ defaultText 40 "elmsteroids" |> moveY 50
-                , defaultText 16 "github.com/yupferris // 2016" |> moveY -30
+                , defaultText 16 "ferris // 2016" |> moveY -30
                 , defaultText 14 "press enter/return to begin" |> moveY -50
                 ]
                 |> alpha (min titleState.stateTime 1)
