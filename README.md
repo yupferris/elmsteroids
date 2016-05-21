@@ -1,7 +1,7 @@
 # elmsteroids
 A non-trivial Asteroids clone written in [Elm](http://elm-lang.org/) 0.17.
 
-![screen shot 2016-05-20 at 7 33 13 pm](https://cloud.githubusercontent.com/assets/3166056/15445923/c84e6c78-1ec1-11e6-9b6b-514e0871bfc4.png)
+![elmsteroids](https://cloud.githubusercontent.com/assets/3166056/15450353/d34c1b20-1f4d-11e6-916e-8e8ea83ec5ab.jpg)
 
 ## Live Demo
 [Play elmsteroids here!](http://yupferris.github.io/elmsteroids/)
