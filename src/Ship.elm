@@ -1,8 +1,9 @@
 module Ship exposing (front, triangle, draw)
 
+import List exposing (..)
 import Collage exposing (Form, group, polygon, filled, outlined, defaultLine)
 import Color exposing (..)
-import Vector exposing (..)
+import Vector exposing (Vector, add, rotate)
 import Triangle exposing (..)
 
 front : Vector -> Float -> Vector
@@ -23,14 +24,14 @@ triangle position rotation =
 
 draw : Vector -> Float -> Form
 draw position rotation =
-  let
-    front' = front position rotation
-    left' = left position rotation
-    right' = right position rotation
-
-    form = polygon [front', left', right']
-  in
-    group
-      [ form |> filled black
-      , form |> outlined { defaultLine | color = white }
-      ]
+  triangle position rotation
+    |> wrap
+    |> map
+       (\t ->
+          let form = polygon [t.a, t.b, t.c]
+          in
+            group
+              [ form |> filled black
+              , form |> outlined { defaultLine | color = white }
+              ])
+    |> group

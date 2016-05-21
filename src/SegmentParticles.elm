@@ -3,12 +3,10 @@ module SegmentParticles exposing (SegmentParticle, segmentParticles, tick, draw)
 import List exposing (map, filterMap)
 import Collage exposing (Form, group, path, traced, defaultLine, move, alpha)
 import Color exposing (..)
-import DrawWrapped exposing (..)
 import Random exposing (Seed, float, step)
 import State exposing (..)
 import Vector exposing (..)
-import Segment exposing (..)
-import Bounds exposing (..)
+import Segment exposing (Segment, center)
 
 type alias SegmentParticle =
   { position : Vector
@@ -61,13 +59,14 @@ tick timeDelta =
 moveParticle : Float -> SegmentParticle -> SegmentParticle
 moveParticle timeDelta particle =
   { particle | position =
-      add particle.position (mulS timeDelta particle.velocity)
-      |> wrap bounds}
+      add particle.position (mulS timeDelta particle.velocity) |> wrap
+  }
 
 rotateParticle : Float -> SegmentParticle -> SegmentParticle
 rotateParticle timeDelta particle =
   { particle | rotation =
-      particle.rotation + particle.rotationVelocity * timeDelta }
+      particle.rotation + particle.rotationVelocity * timeDelta
+  }
 
 killParticle : Float -> SegmentParticle -> Maybe SegmentParticle
 killParticle timeDelta particle =
@@ -82,11 +81,17 @@ draw = map drawParticle >> group
 
 drawParticle : SegmentParticle -> Form
 drawParticle particle =
-  path
-    [ rotate particle.rotation particle.segment.a
-    , rotate particle.rotation particle.segment.b
-    ]
-    |> traced { defaultLine | color = white }
+  particle.segment
+    |> Segment.wrap
+    |> map (drawSegment particle.rotation)
+    |> group
     |> move particle.position
     |> alpha (min particle.timeUntilDeath 1)
-    |> drawWrapped
+
+drawSegment : Float -> Segment -> Form
+drawSegment rotation segment =
+  path
+    [ rotate rotation segment.a
+    , rotate rotation segment.b
+    ]
+    |> traced { defaultLine | color = white }

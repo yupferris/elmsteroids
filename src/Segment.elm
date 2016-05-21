@@ -1,11 +1,20 @@
-module Segment exposing (Segment, center, intersect)
+module Segment exposing (Segment, center, intersect, wrap)
 
 import Vector exposing (..)
+import Wrap
 
 type alias Segment =
   { a : Vector
   , b : Vector
   }
+
+offset : Vector -> Segment -> Segment
+offset o segment =
+  let o' = add o
+  in
+    { a = o' segment.a
+    , b = o' segment.b
+    }
 
 center : Segment -> Vector
 center segment =
@@ -40,3 +49,12 @@ intersect a b =
           u = cross bma r / rxs
         in
           rxs /= 0.0 && (0 <= t && t <= 1) && (0 <= u && u <= 1)
+
+wrap : Segment -> List Segment
+wrap =
+  Wrap.wrap
+        (\bound segment -> fst segment.a < bound || fst segment.b < bound)
+        (\bound segment -> fst segment.a > bound || fst segment.b > bound)
+        (\bound segment -> snd segment.a > bound || snd segment.b > bound)
+        (\bound segment -> snd segment.a < bound || snd segment.b < bound)
+        offset

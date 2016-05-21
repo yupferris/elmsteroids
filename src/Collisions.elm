@@ -1,6 +1,6 @@
 module Collisions exposing (collide)
 
-import List exposing (map, concat, any)
+import List exposing (map, concat, concatMap, any)
 import Random exposing (Seed)
 import State exposing (..)
 import Segment exposing (..)
@@ -60,12 +60,14 @@ collidePlayerAsteroids player asteroids =
 collidePlayerAsteroid : Player -> Asteroid -> State Seed (Bool, List SegmentParticle)
 collidePlayerAsteroid player asteroid =
   let
-    ship = Ship.triangle player.position player.rotation
-    shipSegments = Triangle.segments ship
-    asteroidSegments = Asteroids.segments asteroid
+    shipTriangles = Ship.triangle player.position player.rotation |> Triangle.wrap
+    shipSegments = concatMap Triangle.segments shipTriangles
+    asteroidSegments = Asteroids.wrappedSegments asteroid
     segmentPairs = pairs shipSegments asteroidSegments
+    liesInside' x = Asteroids.liesInside x asteroid
   in
-    if any (\(x, y) -> intersect x y) segmentPairs || Asteroids.liesInside ship.a asteroid then
+    -- TODO: Check if any ship triangle points are inside the asteroid
+    if any (\(x, y) -> intersect x y) segmentPairs || any (\t -> liesInside' t.a || liesInside' t.b || liesInside' t.c) shipTriangles then
       segmentParticles player.velocity shipSegments >>= \particles ->
         return (True, particles)
     else return (False, [])

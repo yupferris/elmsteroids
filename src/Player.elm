@@ -1,10 +1,7 @@
 module Player exposing (Player, tick, draw)
 
 import Collage exposing (Form)
-import Color exposing (..)
-import DrawWrapped exposing (..)
 import Vector exposing (..)
-import Bounds exposing (..)
 import Ship
 import KeyStates exposing (KeyStates)
 
@@ -19,7 +16,7 @@ tick timeDelta keys player =
   let
     position =
       add player.position (mulS timeDelta player.velocity)
-      |> wrap bounds
+      |> wrap
 
     accel = 57.0
     upAccel = if keys.up then accel else 0
@@ -44,6 +41,4 @@ tick timeDelta keys player =
     }
 
 draw : Player -> Form
-draw player =
-  Ship.draw player.position player.rotation
-  |> drawWrapped
+draw player = Ship.draw player.position player.rotation

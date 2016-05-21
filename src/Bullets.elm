@@ -4,7 +4,6 @@ import List exposing (..)
 import Collage exposing (Form, group, rect, filled, move, alpha)
 import Color exposing (..)
 import Vector exposing (..)
-import Bounds exposing (..)
 import Ship
 import Player exposing (Player)
 
@@ -29,8 +28,8 @@ tick timeDelta = filterMap (moveBullet timeDelta >> killBullet timeDelta)
 moveBullet : Float -> Bullet -> Bullet
 moveBullet timeDelta bullet =
   { bullet | position =
-      add bullet.position (mulS timeDelta bullet.velocity)
-      |> wrap bounds }
+      add bullet.position (mulS timeDelta bullet.velocity) |> wrap
+  }
 
 killBullet : Float -> Bullet -> Maybe Bullet
 killBullet timeDelta bullet =

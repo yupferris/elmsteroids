@@ -1,6 +1,4 @@
-module Bounds exposing (width, height, left, right, top, bottom, bounds, safeZoneSize)
-
-import Vector exposing (..)
+module Bounds exposing (width, height, left, right, top, bottom, safeZoneSize)
 
 width : Float
 width = 854
@@ -19,9 +17,6 @@ top = height / 2
 
 bottom : Float
 bottom = -height / 2
-
-bounds : Vector
-bounds = (width, height)
 
 safeZoneSize : Float
 safeZoneSize = 100

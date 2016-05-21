@@ -1,5 +1,7 @@
 module Vector exposing (Vector, length, normalize, add, sub, mul, div, mulS, divS, dot, cross, rotate, wrap)
 
+import Bounds exposing (..)
+
 type alias Vector = (Float, Float)
 
 length : Vector -> Float
@@ -63,18 +65,12 @@ rotate angle vector =
     s = sin angle
   in (x * c + y * s, y * c - x * s)
 
-wrap : Vector -> Vector -> Vector
-wrap bounds vector =
-  let
-    (w, h) = bounds
-    left = -w / 2
-    right = w / 2
-    top = h / 2
-    bottom = -h / 2
-    (x, y) = vector
+wrap : Vector -> Vector
+wrap vector =
+  let (x, y) = vector
   in
-    if x < left then wrap bounds (x + w, y)
-    else if x > right then wrap bounds (x - w, y)
-    else if y < bottom then wrap bounds (x, y + h)
-    else if y > top then wrap bounds (x, y - h)
+    if x < left then wrap (x + width, y)
+    else if x > right then wrap (x - width, y)
+    else if y > top then wrap (x, y - height)
+    else if y < bottom then wrap (x, y + height)
     else vector
