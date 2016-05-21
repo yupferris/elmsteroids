@@ -1,5 +1,5 @@
 # elmsteroids
-An Asteroids clone written in [Elm](http://elm-lang.org/) 0.17.
+A non-trivial Asteroids clone written in [Elm](http://elm-lang.org/) 0.17.
 
 ![screen shot 2016-05-20 at 7 33 13 pm](https://cloud.githubusercontent.com/assets/3166056/15445923/c84e6c78-1ec1-11e6-9b6b-514e0871bfc4.png)
 
@@ -10,7 +10,7 @@ An Asteroids clone written in [Elm](http://elm-lang.org/) 0.17.
 <kbd>←</kbd>, <kbd>↑</kbd>, <kbd>→</kbd> <kbd>↓</kbd> move, <kbd>space</kbd> shoots. <kbd>enter/return</kbd> moves to the next game state (where applicable). That's it!
 
 ## Details/Post Mortem
-This is an Asteroids clone written in Elm. It was written to get a feel for Elm with a somewhat non-trivial project, which is why I went nuts with details like precise collisions, proper space wrapping, particles, various game states, etc. Overall, it was a fun project, and it was especially fun to implement in a purely functional language.
+This is an Asteroids clone written in Elm. It was written to get a feel for Elm with a somewhat non-trivial project, which is why I went nuts with details like precise collisions, proper space wrapping, particles, various game states, etc. Overall, it was a fun project, took me about a week's worth of evenings to do, and was especially fun to implement in a purely functional language.
 
 However, there were definitely a few pain points. For one thing, this was written right after 0.17 was publicly released, and not all of the documentation etc has caught up. At the time of writing, large portions of it are unfinished, with notes like "this guide is coming soon, but it works how it used to", which is particularly unhelpful for someone like me who hasn't used Elm before. I spent much more time than I'd like to admit reading through the standard library source code and wading through random 3rd-party github repo's because of this. This also meant no time travelling debugger, which is a bit of a disappointment, since that was supposed to be one of Elm's flagship features previously.
 
