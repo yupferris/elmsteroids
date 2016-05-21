@@ -10,6 +10,7 @@ import Segment exposing (Segment)
 import Triangle exposing (Triangle)
 import Bounds exposing (..)
 import SegmentParticles exposing (SegmentParticle, segmentParticles)
+import Wrap
 
 type alias Asteroid =
   { position : Vector
@@ -196,16 +197,12 @@ drawAsteroid asteroid =
     |> group
 
 wrapPoints : List Vector -> List (List Vector)
-wrapPoints points =
+wrapPoints =
   let move o = map (add o)
   in
-    [points]
-      |> wrapPoints' (any (\(x, _) -> x < left)) (move (width, 0))
-      |> wrapPoints' (any (\(x, _) -> x > right)) (move (-width, 0))
-      |> wrapPoints' (any (\(_, y) -> y > top)) (move (0, -height))
-      |> wrapPoints' (any (\(_, y) -> y < bottom)) (move (0, height))
-
-wrapPoints' : (List Vector -> Bool) -> (List Vector -> List Vector) -> List (List Vector) -> List (List Vector)
-wrapPoints' f g points =
-  if any f points then points ++ map g points
-  else points
+    Wrap.wrap
+          (\bound -> any (\(x, _) -> x < bound))
+          (\bound -> any (\(x, _) -> x > bound))
+          (\bound -> any (\(_, y) -> y > bound))
+          (\bound -> any (\(_, y) -> y < bound))
+          move

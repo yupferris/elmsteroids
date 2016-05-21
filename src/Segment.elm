@@ -3,6 +3,7 @@ module Segment exposing (Segment, center, intersect, wrap)
 import List exposing (..)
 import Vector exposing (..)
 import Bounds exposing (..)
+import Wrap
 
 type alias Segment =
   { a : Vector
@@ -52,14 +53,10 @@ intersect a b =
           rxs /= 0.0 && (0 <= t && t <= 1) && (0 <= u && u <= 1)
 
 wrap : Segment -> List Segment
-wrap segment =
-  [segment]
-    |> wrap' (\segment -> fst segment.a < left || fst segment.b < left) (offset (width, 0))
-    |> wrap' (\segment -> fst segment.a > right || fst segment.b > right) (offset (-width, 0))
-    |> wrap' (\segment -> snd segment.a > top || snd segment.b > top) (offset (0, -height))
-    |> wrap' (\segment -> snd segment.a < bottom || snd segment.b < bottom) (offset (0, height))
-
-wrap' : (Segment -> Bool) -> (Segment -> Segment) -> List Segment -> List Segment
-wrap' f g segments =
-  if any f segments then segments ++ map g segments
-  else segments
+wrap =
+  Wrap.wrap
+        (\bound segment -> fst segment.a < bound || fst segment.b < bound)
+        (\bound segment -> fst segment.a > bound || fst segment.b > bound)
+        (\bound segment -> snd segment.a > bound || snd segment.b > bound)
+        (\bound segment -> snd segment.a < bound || snd segment.b < bound)
+        offset

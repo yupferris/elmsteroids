@@ -4,6 +4,7 @@ import List exposing (..)
 import Bounds exposing (..)
 import Vector exposing (..)
 import Segment exposing (..)
+import Wrap
 
 type alias Triangle =
   { a : Vector
@@ -50,15 +51,15 @@ liesInside point triangle =
     v = (dot00 * dot12 - dot01 * dot02) / denom
   in u >= 0 && v >= 0 && u + v < 1
 
-wrap : Triangle -> List Triangle
-wrap triangle =
-  [triangle]
-    |> wrap' (\triangle -> fst triangle.a < left || fst triangle.b < left || fst triangle.c < left) (offset (width, 0))
-    |> wrap' (\triangle -> fst triangle.a > right || fst triangle.b > right || fst triangle.c > right) (offset (-width, 0))
-    |> wrap' (\triangle -> snd triangle.a > top || snd triangle.b > top || snd triangle.c > top) (offset (0, -height))
-    |> wrap' (\triangle -> snd triangle.a < bottom || snd triangle.b < bottom || snd triangle.c < bottom) (offset (0, height))
+anyPoints : (Vector -> Bool) -> Triangle -> Bool
+anyPoints f triangle =
+  f triangle.a || f triangle.b || f triangle.c
 
-wrap' : (Triangle -> Bool) -> (Triangle -> Triangle) -> List Triangle -> List Triangle
-wrap' f g triangles =
-  if any f triangles then triangles ++ map g triangles
-  else triangles
+wrap : Triangle -> List Triangle
+wrap =
+  Wrap.wrap
+        (\bound -> anyPoints (\(x, _) -> x < bound))
+        (\bound -> anyPoints (\(x, _) -> x > bound))
+        (\bound -> anyPoints (\(_, y) -> y > bound))
+        (\bound -> anyPoints (\(_, y) -> y < bound))
+        offset
