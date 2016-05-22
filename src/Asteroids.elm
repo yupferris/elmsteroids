@@ -4,7 +4,7 @@ import List exposing (map, concatMap, any)
 import Collage exposing (Form, group, polygon, filled, outlined, defaultLine)
 import Color exposing (..)
 import Random exposing (Seed, int, float, step)
-import State exposing (..)
+import State exposing (State, return, andThen, map2)
 import Vector exposing (..)
 import Segment exposing (Segment)
 import Triangle exposing (Triangle)
@@ -71,11 +71,11 @@ wrappedSegments =
 
 split : Asteroid -> State Seed (List Asteroid, List SegmentParticle)
 split asteroid =
-  segmentParticles asteroid.velocity (segments asteroid) >>= \particles ->
+  segmentParticles asteroid.velocity (segments asteroid) `andThen` \particles ->
     let size = asteroid.size - 1
     in
       if size > 0 then
-        step (int 1 3) >>= split' asteroid.position size >>= \asteroids ->
+        step (int 1 3) `andThen` split' asteroid.position size `andThen` \asteroids ->
           return (asteroids, particles)
       else return ([], particles)
 
@@ -83,20 +83,22 @@ split' : Vector -> Int -> Int -> State Seed (List Asteroid)
 split' position size count =
   if count == 0 then return []
   else
-    (::)
-      <$> initAsteroid (Just position) size size
-      <*> split' position size (count - 1)
+    map2
+      (::)
+      (initAsteroid (Just position) size size)
+      (split' position size (count - 1))
 
 init : State Seed (List Asteroid)
-init = step (int 2 3) >>= init' 4 5
+init = step (int 2 3) `andThen` init' 4 5
 
 init' : Int -> Int -> Int -> State Seed (List Asteroid)
 init' minSize maxSize count =
   if count == 0 then return []
   else
-    (::)
-      <$> initAsteroid Nothing minSize maxSize
-      <*> init' minSize maxSize (count - 1)
+    map2
+      (::)
+      (initAsteroid Nothing minSize maxSize)
+      (init' minSize maxSize (count - 1))
 
 initAsteroid : Maybe Vector -> Int -> Int -> State Seed Asteroid
 initAsteroid spawnPos minSize maxSize =
@@ -109,17 +111,17 @@ initAsteroid spawnPos minSize maxSize =
         maxRadius = idealRadius * 1.05
       in float minRadius maxRadius
   in
-    step (int minSize maxSize) >>= \size ->
-      angle >>= \velDirection ->
-        step (float 60 (180 / toFloat (size ^ 2))) >>= \velMagnitude ->
-          angle >>= \rotation ->
-            step (float -0.5 0.5) >>= \rotationVelocity ->
-              step (radiusGen size) >>= \radius ->
+    step (int minSize maxSize) `andThen` \size ->
+      angle `andThen` \velDirection ->
+        step (float 60 (180 / toFloat (size ^ 2))) `andThen` \velMagnitude ->
+          angle `andThen` \rotation ->
+            step (float -0.5 0.5) `andThen` \rotationVelocity ->
+              step (radiusGen size) `andThen` \radius ->
                 (case spawnPos of
                    Just pos -> return pos
                    _ ->
-                     step (float left right) >>= \x ->
-                       step (float bottom top) >>= \y ->
+                     step (float left right) `andThen` \x ->
+                       step (float bottom top) `andThen` \y ->
                          let
                            p = (x, y)
                            safeZoneSize' = safeZoneSize + radius
@@ -127,12 +129,12 @@ initAsteroid spawnPos minSize maxSize =
                            return
                              (if length p < safeZoneSize' then
                                 p |> normalize |> mulS safeZoneSize'
-                              else p)) >>= \position ->
+                              else p)) `andThen` \position ->
                   let
                     minRadius = radius * 0.8
                     maxRadius = radius * 1.2
                   in
-                    initPoints minRadius maxRadius >>= \points ->
+                    initPoints minRadius maxRadius `andThen` \points ->
                       return
                         { position = position
                         , velocity = rotate velDirection (0, velMagnitude)
@@ -144,7 +146,7 @@ initAsteroid spawnPos minSize maxSize =
 
 initPoints : Float -> Float -> State Seed (List Vector)
 initPoints minRadius maxRadius =
-  step (int 10 16) >>= \count ->
+  step (int 10 16) `andThen` \count ->
     initPoints' (pi * 2.0 / (toFloat count)) minRadius maxRadius count
 
 initPoints' : Float -> Float -> Float -> Int -> State Seed (List Vector)
@@ -153,15 +155,15 @@ initPoints' segAngleDelta minRadius maxRadius count =
   else
     let angleOffset = toFloat count * segAngleDelta
     in
-      step (float (-segAngleDelta * 0.3) (segAngleDelta * 0.3)) >>= \angle ->
-        step (float minRadius maxRadius) >>= \radius' ->
+      step (float (-segAngleDelta * 0.3) (segAngleDelta * 0.3)) `andThen` \angle ->
+        step (float minRadius maxRadius) `andThen` \radius' ->
           let
             angle' = angle + angleOffset
             x = cos angle' * radius'
             y = sin angle' * radius'
             point = (x, y)
           in
-            ((::) point) <$> initPoints' segAngleDelta minRadius maxRadius (count - 1)
+            State.map ((::) point) (initPoints' segAngleDelta minRadius maxRadius (count - 1))
 
 tick : Float -> List Asteroid -> List Asteroid
 tick timeDelta = map (moveAsteroid timeDelta >> rotateAsteroid timeDelta)

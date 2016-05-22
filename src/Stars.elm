@@ -1,10 +1,9 @@
 module Stars exposing (Star, init, tick, draw)
 
-import List exposing (map)
 import Color exposing (..)
 import Collage exposing (Form, group, rect, filled, move, alpha)
 import Random exposing (Seed, int, float, step)
-import State exposing (..)
+import State exposing (State, return, andThen, map2)
 import Vector exposing (..)
 import Bounds exposing (..)
 
@@ -15,19 +14,19 @@ type alias Star =
   }
 
 init : State Seed (List Star)
-init = step (int 80 100) >>= init'
+init = step (int 80 100) `andThen` init'
 
 init' : Int -> State Seed (List Star)
 init' count =
   if count == 0 then return []
-  else (::) <$> initStar <*> init' (count - 1)
+  else map2 (::) initStar (init' (count - 1))
 
 initStar : State Seed (Star)
 initStar =
-  step (float left right) >>= \x ->
-    step (float bottom top) >>= \y ->
-      step (float 0 (pi * 2)) >>= \phase ->
-        step (float 0 2) >>= \frequency ->
+  step (float left right) `andThen` \x ->
+    step (float bottom top) `andThen` \y ->
+      step (float 0 (pi * 2)) `andThen` \phase ->
+        step (float 0 2) `andThen` \frequency ->
           return
             { position = (x, y)
             , blinkPhase = phase
@@ -35,14 +34,14 @@ initStar =
             }
 
 tick : Float -> List Star -> List Star
-tick timeDelta = map (tickStar timeDelta)
+tick timeDelta = List.map (tickStar timeDelta)
 
 tickStar : Float -> Star -> Star
 tickStar timeDelta star =
   { star | blinkPhase = star.blinkPhase + star.blinkFrequency * timeDelta }
 
 draw : List Star -> Form
-draw = map drawStar >> group
+draw = List.map drawStar >> group
 
 drawStar : Star -> Form
 drawStar star =

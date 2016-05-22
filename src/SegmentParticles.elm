@@ -4,7 +4,7 @@ import List exposing (map, filterMap)
 import Collage exposing (Form, group, path, traced, defaultLine, move, alpha)
 import Color exposing (..)
 import Random exposing (Seed, float, step)
-import State exposing (..)
+import State exposing (State, return, andThen, map2)
 import Vector exposing (..)
 import Segment exposing (Segment, center)
 
@@ -22,18 +22,19 @@ segmentParticles initialVelocity segments =
   case segments of
     [] -> return []
     x::xs ->
-      (::)
-        <$> segmentParticle initialVelocity x
-        <*> segmentParticles initialVelocity xs
+      map2
+        (::)
+        (segmentParticle initialVelocity x)
+        (segmentParticles initialVelocity xs)
 
 segmentParticle : Vector -> Segment -> State Seed SegmentParticle
 segmentParticle initialVelocity segment =
   let angle = float 0 (pi * 2) |> step
   in
-    angle >>= \velDirection ->
-      step (float 0 40) >>= \velMagnitude ->
-        step (float -1 1) >>= \rotationVelocity ->
-          step (float 1 3) >>= \timeUntilDeath ->
+    angle `andThen` \velDirection ->
+      step (float 0 40) `andThen` \velMagnitude ->
+        step (float -1 1) `andThen` \rotationVelocity ->
+          step (float 1 3) `andThen` \timeUntilDeath ->
             let
               position = center segment
               segment' =

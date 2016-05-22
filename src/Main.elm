@@ -1,13 +1,13 @@
 import Html exposing (Html)
 import Html.App
-import Random exposing (..)
+import Random exposing (Seed, initialSeed)
 import Time exposing (..)
 import AnimationFrame exposing (..)
 import Keyboard exposing (..)
 import Collage exposing (Form, collage, group, rect, filled, text, moveY, scale, alpha, scale)
 import Element
 import Color exposing (..)
-import State exposing (..)
+import State exposing (State, return, andThen)
 import DefaultText exposing (..)
 import Bounds exposing (..)
 import Stars exposing (Star)
@@ -172,8 +172,8 @@ initTitle randomSeed =
 
 initStarsAndAsteroids : State Seed (List Star, List Asteroid)
 initStarsAndAsteroids =
-  Stars.init >>= \stars ->
-    Asteroids.init >>= \asteroids ->
+  Stars.init `andThen` \stars ->
+    Asteroids.init `andThen` \asteroids ->
       return (stars, asteroids)
 
 tickTitle : Float -> TitleState -> TitleState
