@@ -7,7 +7,7 @@ import Keyboard exposing (..)
 import Collage exposing (Form, collage, group, rect, filled, text, moveY, scale, alpha, scale)
 import Element
 import Color exposing (..)
-import State exposing (State, return, andThen)
+import State exposing (State, finally, andThen)
 import DefaultText exposing (..)
 import Bounds exposing (..)
 import Stars exposing (Star)
@@ -174,7 +174,7 @@ initStarsAndAsteroids : State Seed (List Star, List Asteroid)
 initStarsAndAsteroids =
   Stars.init `andThen` \stars ->
     Asteroids.init `andThen` \asteroids ->
-      return (stars, asteroids)
+      finally (stars, asteroids)
 
 tickTitle : Float -> TitleState -> TitleState
 tickTitle timeDelta titleState =

@@ -4,7 +4,7 @@ import List exposing (map, filterMap)
 import Collage exposing (Form, group, path, traced, defaultLine, move, alpha)
 import Color exposing (..)
 import Random exposing (Seed, float, step)
-import State exposing (State, return, andThen, map2)
+import State exposing (State, finally, andThen, map2)
 import Vector exposing (..)
 import Segment exposing (Segment, center)
 
@@ -20,7 +20,7 @@ type alias SegmentParticle =
 segmentParticles : Vector -> List Segment -> State Seed (List SegmentParticle)
 segmentParticles initialVelocity segments =
   case segments of
-    [] -> return []
+    [] -> finally []
     x::xs ->
       map2
         (::)
@@ -42,7 +42,7 @@ segmentParticle initialVelocity segment =
                 , b = sub segment.b position
                 }
             in
-              return
+              finally
                 { position = position
                 , velocity =
                   rotate velDirection (0, velMagnitude)

@@ -3,7 +3,7 @@ module Stars exposing (Star, init, tick, draw)
 import Color exposing (..)
 import Collage exposing (Form, group, rect, filled, move, alpha)
 import Random exposing (Seed, int, float, step)
-import State exposing (State, return, andThen, map2)
+import State exposing (State, finally, andThen, map2)
 import Vector exposing (..)
 import Bounds exposing (..)
 
@@ -18,7 +18,7 @@ init = step (int 80 100) `andThen` init'
 
 init' : Int -> State Seed (List Star)
 init' count =
-  if count == 0 then return []
+  if count == 0 then finally []
   else map2 (::) initStar (init' (count - 1))
 
 initStar : State Seed (Star)
@@ -27,7 +27,7 @@ initStar =
     step (float bottom top) `andThen` \y ->
       step (float 0 (pi * 2)) `andThen` \phase ->
         step (float 0 2) `andThen` \frequency ->
-          return
+          finally
             { position = (x, y)
             , blinkPhase = phase
             , blinkFrequency = frequency
